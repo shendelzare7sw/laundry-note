@@ -11,14 +11,43 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::create('properti', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->string('nama');
+            $table->text('alamat')->nullable();
+            $table->string('nama_properti_laporan');
+            $table->string('status', 20)->default('draf')->index();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('username')->unique();
+            $table->string('email')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('role', 20)->default('penjaga')->index();
+            $table->foreignId('properti_id')
+                ->nullable()
+                ->constrained('properti')
+                ->restrictOnDelete();
+            $table->boolean('aktif')->default(true);
+            $table->unsignedBigInteger('admin_properti')
+                ->nullable()
+                ->storedAs("IF(role = 'admin' AND aktif = 1, properti_id, NULL)");
+            $table->unique('admin_properti', 'users_admin_properti_unique');
             $table->rememberToken();
             $table->timestamps();
+        });
+
+        Schema::table('properti', function (Blueprint $table) {
+            $table->foreign('owner_id')
+                ->references('id')
+                ->on('users')
+                ->nullOnDelete();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -42,8 +71,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
+        Schema::table('properti', function (Blueprint $table) {
+            $table->dropForeign(['owner_id']);
+        });
+
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
+        Schema::dropIfExists('properti');
     }
 };
