@@ -40,4 +40,29 @@ class Properti extends Model
         return $this->hasMany(User::class, 'properti_id')
             ->where('role', Peran::Penjaga->value);
     }
+
+    public function kamar(): HasMany
+    {
+        return $this->hasMany(Kamar::class, 'properti_id')->orderBy('nomor');
+    }
+
+    public function penghuni(): HasMany
+    {
+        return $this->hasMany(Penghuni::class, 'properti_id');
+    }
+
+    public function penempatan(): HasMany
+    {
+        return $this->hasMany(Penempatan::class, 'properti_id');
+    }
+
+    public function laundry(): HasMany
+    {
+        return $this->hasMany(Laundry::class, 'properti_id');
+    }
+
+    public function pengaturan(): HasMany
+    {
+        return $this->hasMany(Pengaturan::class, 'properti_id');
+    }
 }
