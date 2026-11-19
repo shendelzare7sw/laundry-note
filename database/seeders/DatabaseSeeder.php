@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
             DevAdminSeeder::class,
             OwnerSeeder::class,
             PropertiSeeder::class,
+            KamarSeeder::class,
+            PengaturanSeeder::class,
         ]);
     }
 }
