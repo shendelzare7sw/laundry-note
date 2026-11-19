@@ -64,6 +64,12 @@ class PenggunaController extends Controller
             'aktif' => true,
         ]);
 
+        if ($request->filled('setup_properti_id')) {
+            return redirect()
+                ->route('properti.setup.tampilkan', $request->integer('setup_properti_id'))
+                ->with('toast', ['tipe' => 'ok', 'pesan' => "Akun \"{$pengguna->username}\" berhasil dibuat."]);
+        }
+
         return redirect()
             ->route('pengguna.index')
             ->with('toast', ['tipe' => 'ok', 'pesan' => "Akun \"{$pengguna->username}\" berhasil dibuat."]);

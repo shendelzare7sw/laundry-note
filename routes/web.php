@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\PropertiController;
+use App\Http\Controllers\PropertiWizardController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function (): void {
@@ -28,6 +29,11 @@ Route::middleware(['auth', 'properti.aktif'])->group(function (): void {
     Route::get('/properti/{properti}', [PropertiController::class, 'tampilkan'])->name('properti.tampilkan');
     Route::put('/properti/{properti}', [PropertiController::class, 'update'])->name('properti.update');
     Route::post('/properti/pilih/{properti}', [PropertiController::class, 'pilih'])->name('properti.pilih');
+
+    Route::get('/properti/{properti}/setup', [PropertiWizardController::class, 'tampilkan'])->name('properti.setup.tampilkan');
+    Route::post('/properti/{properti}/setup/kamar', [PropertiWizardController::class, 'simpanKamar'])->name('properti.setup.kamar');
+    Route::post('/properti/{properti}/setup/aturan', [PropertiWizardController::class, 'simpanAturan'])->name('properti.setup.aturan');
+    Route::post('/properti/{properti}/setup/aktifkan', [PropertiWizardController::class, 'aktifkan'])->name('properti.setup.aktifkan');
 
     Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
     Route::post('/pengguna', [PenggunaController::class, 'store'])->name('pengguna.store');

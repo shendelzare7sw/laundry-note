@@ -1,0 +1,149 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\Peran;
+use App\Models\AuditLog;
+use App\Models\Kamar;
+use App\Models\Pengaturan;
+use App\Models\Properti;
+use App\Models\User;
+use Database\Seeders\PengaturanSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class WizardSetupPropertiTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_owner_dapat_menjalankan_wizard_setup_properti_sampai_aktif(): void
+    {
+        $this->seed(PengaturanSeeder::class);
+
+        $owner = User::factory()->create([
+            'username' => 'owner_wizard',
+            'role' => Peran::Owner,
+            'aktif' => true,
+        ]);
+
+        // 1. Owner buat properti baru berstatus draf -> diarahkan ke wizard setup
+        $response = $this->actingAs($owner)->post(route('properti.store'), [
+            'nama' => 'Dbata Residence 2',
+            'nama_properti_laporan' => 'Dbata Residence 2',
+            'alamat' => 'Jl. Melati No. 2',
+            'status' => 'draf',
+        ]);
+
+        $properti = Properti::query()->where('nama', 'Dbata Residence 2')->firstOrFail();
+        $response->assertRedirect(route('properti.setup.tampilkan', $properti));
+
+        // Aturan bawaan global otomatis disalin
+        $this->assertDatabaseHas('pengaturan', [
+            'properti_id' => $properti->id,
+            'kunci' => 'tarif_per_kg',
+            'nilai' => '8000',
+        ]);
+
+        // 2. Aktivasi ditolak sebelum ada kamar dan admin
+        $this->actingAs($owner)
+            ->post(route('properti.setup.aktifkan', $properti))
+            ->assertRedirect(route('properti.setup.tampilkan', $properti))
+            ->assertSessionHasErrors('aktivasi');
+
+        $this->assertSame('draf', $properti->fresh()->status);
+
+        // 3. Generate kamar per lantai (idempoten)
+        $payloadKamar = [
+            'lantai' => [
+                ['lantai' => 1, 'dari' => 101, 'sampai' => 105],
+                ['lantai' => 2, 'dari' => 201, 'sampai' => 203],
+            ],
+        ];
+
+        $this->actingAs($owner)
+            ->post(route('properti.setup.kamar', $properti), $payloadKamar)
+            ->assertRedirect(route('properti.setup.tampilkan', $properti));
+
+        $this->actingAs($owner)
+            ->post(route('properti.setup.kamar', $properti), $payloadKamar)
+            ->assertRedirect(route('properti.setup.tampilkan', $properti));
+
+        $this->assertSame(8, Kamar::query()->untukProperti($properti)->count());
+
+        // 4. Simpan aturan khusus properti
+        $this->actingAs($owner)
+            ->post(route('properti.setup.aturan', $properti), [
+                'tarif_per_kg' => 9000,
+                'min_kg' => 2,
+                'kuota_kg' => 25,
+                'ambang_mendekati_persen' => 80,
+                'toleransi_kg' => 1,
+                'pembulatan' => 1000,
+                'mode_kuota' => 'penghuni',
+                'jam_edit_penjaga' => 12,
+                'penjaga_kelola_kontrak' => 1,
+            ])
+            ->assertRedirect(route('properti.setup.tampilkan', $properti));
+
+        $this->assertSame(
+            '9000',
+            Pengaturan::query()
+                ->untukProperti($properti)
+                ->where('kunci', 'tarif_per_kg')
+                ->latest('id')
+                ->value('nilai')
+        );
+
+        // 5. Tambahkan admin properti lewat form wizard
+        $this->actingAs($owner)
+            ->post(route('pengguna.store'), [
+                'name' => 'Admin Dbata 2',
+                'username' => 'admin_dbata2',
+                'password' => 'password123',
+                'role' => Peran::Admin->value,
+                'properti_id' => $properti->id,
+                'setup_properti_id' => $properti->id,
+            ])
+            ->assertRedirect(route('properti.setup.tampilkan', $properti));
+
+        // 6. Aktivasi sekarang berhasil
+        $this->actingAs($owner)
+            ->post(route('properti.setup.aktifkan', $properti))
+            ->assertRedirect(route('properti.setup.tampilkan', $properti))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('aktif', $properti->fresh()->status);
+        $this->assertTrue(
+            AuditLog::query()
+                ->untukProperti($properti)
+                ->where('aksi', 'wizard_aktifkan_properti')
+                ->exists()
+        );
+    }
+
+    public function test_admin_dan_penjaga_ditolak_mengakses_wizard_setup_properti(): void
+    {
+        $owner = User::factory()->create(['username' => 'owner_w2', 'role' => Peran::Owner]);
+        $properti = Properti::query()->create([
+            'owner_id' => $owner->id,
+            'nama' => 'Properti Uji',
+            'nama_properti_laporan' => 'Properti Uji',
+            'status' => 'aktif',
+        ]);
+
+        $admin = User::factory()->create([
+            'username' => 'admin_w2',
+            'role' => Peran::Admin,
+            'properti_id' => $properti->id,
+        ]);
+
+        $penjaga = User::factory()->create([
+            'username' => 'penjaga_w2',
+            'role' => Peran::Penjaga,
+            'properti_id' => $properti->id,
+        ]);
+
+        $this->actingAs($admin)->get(route('properti.setup.tampilkan', $properti))->assertForbidden();
+        $this->actingAs($penjaga)->get(route('properti.setup.tampilkan', $properti))->assertForbidden();
+    }
+}

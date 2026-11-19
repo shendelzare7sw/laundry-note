@@ -41,6 +41,14 @@
                         >
                             Detail
                         </a>
+                        @can('update', $item)
+                            <a
+                                href="{{ route('properti.setup.tampilkan', $item) }}"
+                                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-maroon/25 bg-maroon/5 px-3.5 text-xs font-bold text-maroon hover:bg-maroon/10"
+                            >
+                                Setup
+                            </a>
+                        @endcan
                         <form method="POST" action="{{ route('properti.pilih', $item) }}">
                             @csrf
                             <button
