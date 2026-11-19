@@ -9,6 +9,10 @@ class ExampleTest extends TestCase
     public function test_tamu_diarahkan_ke_halaman_login(): void
     {
         $this->get('/')->assertRedirect('/login');
-        $this->get('/login')->assertOk()->assertSee('Catatan Laundry');
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('Laundry-Kos')
+            ->assertSee('img/logo-app.jpg')
+            ->assertSee('img/favicon-32x32.png');
     }
 }

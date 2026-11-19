@@ -4,17 +4,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $judul ?? 'Masuk' }} — Catatan Laundry</title>
+    <title>{{ $judul ?? 'Masuk' }} — {{ config('app.name', 'Laundry-Kos') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('img/favicon-32x32.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('img/apple-touch-icon.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="flex min-h-screen flex-col justify-center bg-bg px-4 py-8 font-sans text-ink antialiased">
     <div class="mx-auto w-full max-w-sm">
         <div class="mb-6 text-center">
-            <div class="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-maroon text-lg font-bold text-gold-soft shadow-xs">
-                CL
+            <h1 class="sr-only">{{ config('app.name', 'Laundry-Kos') }}</h1>
+            <div class="mx-auto inline-flex items-center justify-center rounded-2xl border border-line bg-surface p-2 shadow-xs">
+                <img
+                    src="{{ asset('img/logo-app.jpg') }}"
+                    alt="{{ config('app.name', 'Laundry-Kos') }}"
+                    class="h-28 w-28 rounded-xl object-contain"
+                >
             </div>
-            <h1 class="mt-3 text-xl font-bold text-ink">Catatan Laundry</h1>
-            <p class="mt-1 text-sm text-muted">Masuk dengan akun yang telah didaftarkan admin</p>
+            <p class="mt-3 text-sm text-muted">Masuk dengan akun yang telah didaftarkan admin</p>
         </div>
 
         {{ $slot }}

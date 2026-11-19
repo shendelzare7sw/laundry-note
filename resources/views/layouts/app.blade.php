@@ -1,7 +1,7 @@
 @php
-    $judul = $judul ?? 'Catatan Laundry';
+    $judul = $judul ?? config('app.name', 'Laundry-Kos');
     $penggunaSaatIni = auth()->user();
-    $namaProperti = $propertiAktif?->nama ?? config('app.name', 'Catatan Laundry');
+    $namaProperti = $propertiAktif?->nama ?? config('app.name', 'Laundry-Kos');
     $menuSamping = [
         ['route' => 'beranda', 'label' => 'Beranda', 'aktif' => request()->routeIs('beranda')],
         ['route' => 'laundry.index', 'label' => 'Laundry', 'aktif' => request()->routeIs('laundry.*')],
@@ -17,6 +17,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $judul }} — {{ $namaProperti }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('img/favicon-32x32.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('img/apple-touch-icon.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-bg font-sans text-ink antialiased">
@@ -24,9 +27,18 @@
         {{-- Sidebar Desktop --}}
         <aside class="hidden print:hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:border-r lg:border-line lg:bg-surface">
             <div class="bg-maroon px-5 py-4 text-white">
-                <div class="text-xs font-medium uppercase tracking-wider text-gold-soft">Catatan Laundry</div>
-                <div class="mt-0.5 text-base font-bold leading-snug">{{ $namaProperti }}</div>
-                <div class="mt-2 inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium">
+                <div class="flex items-center gap-3">
+                    <img
+                        src="{{ asset('img/favicon-tab-browser.jpg') }}"
+                        alt="{{ config('app.name', 'Laundry-Kos') }}"
+                        class="h-10 w-10 shrink-0 rounded-xl bg-white object-contain p-1"
+                    >
+                    <div class="min-w-0">
+                        <div class="text-xs font-medium uppercase tracking-wider text-gold-soft">{{ config('app.name', 'Laundry-Kos') }}</div>
+                        <div class="mt-0.5 truncate text-base font-bold leading-snug">{{ $namaProperti }}</div>
+                    </div>
+                </div>
+                <div class="mt-2.5 inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium">
                     {{ $penggunaSaatIni->name }} · {{ $penggunaSaatIni->role->label() }}
                 </div>
             </div>
@@ -106,10 +118,17 @@
             {{-- Header Mobile --}}
             <header class="sticky top-0 z-30 bg-maroon px-4 py-3 text-white shadow-xs print:hidden lg:hidden">
                 <div class="flex items-center justify-between gap-3">
-                    <div class="min-w-0">
-                        <div class="truncate text-base font-bold">{{ $namaProperti }}</div>
-                        <div class="truncate text-xs text-white/85">
-                            {{ $penggunaSaatIni->name }} · {{ $penggunaSaatIni->role->label() }}
+                    <div class="flex min-w-0 items-center gap-2.5">
+                        <img
+                            src="{{ asset('img/favicon-tab-browser.jpg') }}"
+                            alt="{{ config('app.name', 'Laundry-Kos') }}"
+                            class="h-9 w-9 shrink-0 rounded-xl bg-white object-contain p-0.5"
+                        >
+                        <div class="min-w-0">
+                            <div class="truncate text-base font-bold">{{ $namaProperti }}</div>
+                            <div class="truncate text-xs text-white/85">
+                                {{ $penggunaSaatIni->name }} · {{ $penggunaSaatIni->role->label() }}
+                            </div>
                         </div>
                     </div>
 
