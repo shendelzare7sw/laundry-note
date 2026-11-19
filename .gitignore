@@ -31,3 +31,7 @@ Thumbs.db
 
 # Knowledge graph Graphify (dibangkitkan ulang secara lokal)
 /graphify-out/
+
+# Aset indeks biner skill modern-web-guidance (tetap lokal, tidak masuk repo)
+/.agents/skills/modern-web-guidance/gen/
+/.agents/skills/modern-web-guidance/legacy-scan.mjs
