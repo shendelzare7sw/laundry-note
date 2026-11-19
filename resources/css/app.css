@@ -2,8 +2,70 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+@source '../js/**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-maroon: #8B1A1A;
+    --color-maroon-cerah: #A11D1D;
+    --color-maroon-strong: #C42626;
+
+    --color-gold: #C8920E;
+    --color-gold-bright: #D4A017;
+    --color-gold-soft: #E8C25A;
+    --color-gold-container: #FBF1D8;
+    --color-on-gold: #6B4E08;
+
+    --color-bg: #F9F5F0;
+    --color-surface: #FFFFFF;
+    --color-alt: #FCFAF6;
+    --color-sunken: #F1EBE2;
+    --color-line: #ECE5DB;
+    --color-line-strong: #E0D7C9;
+
+    --color-ink: #1C1C1C;
+    --color-muted: #6B7280;
+    --color-subtle: #9A938A;
+
+    --color-ok: #16A34A;
+    --color-warn: #CA8A04;
+    --color-danger: #DC2626;
+    --color-info: #2563EB;
+}
+
+@layer base {
+    html {
+        scroll-padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    body {
+        background-color: var(--color-bg);
+        color: var(--color-ink);
+        overflow-wrap: break-word;
+    }
+
+    h1, h2, h3 {
+        text-wrap: balance;
+    }
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+dialog:modal {
+    overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+    background: rgb(28 28 28 / 0.45);
+}
+
+.bottom-nav-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
 }
