@@ -85,20 +85,27 @@ class PropertiController extends Controller
         ]);
     }
 
-    public function update(PropertiRequest $request, Properti $properti): RedirectResponse
+    public function update(PropertiRequest $request, Properti $properti, PropertiWizardService $wizard): RedirectResponse
     {
+        $statusBaru = $request->string('status')->toString();
+
         $properti->update([
             'nama' => $request->string('nama')->toString(),
             'alamat' => $request->input('alamat'),
             'no_wa_admin' => $request->input('no_wa_admin'),
             'deskripsi' => $request->input('deskripsi'),
             'nama_properti_laporan' => $request->string('nama_properti_laporan')->toString(),
-            'status' => $request->string('status')->toString(),
         ]);
+
+        $wizard->ubahStatusProperti($properti, $statusBaru, $request->user(), false);
+
+        $pesanStatus = $statusBaru !== 'aktif'
+            ? "Properti \"{$properti->nama}\" diperbarui ke status {$statusBaru}. Akses login staf dihentikan sementara dan seluruh data historis tetap aman."
+            : "Properti \"{$properti->nama}\" berhasil diperbarui.";
 
         return redirect()
             ->route('properti.index')
-            ->with('toast', ['tipe' => 'ok', 'pesan' => "Properti \"{$properti->nama}\" berhasil diperbarui."]);
+            ->with('toast', ['tipe' => 'ok', 'pesan' => $pesanStatus]);
     }
 
     public function pilih(Request $request, Properti $properti): RedirectResponse

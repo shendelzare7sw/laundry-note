@@ -93,6 +93,33 @@ class AutentikasiTest extends TestCase
         ]);
 
         $this->actingAs($penjaga)->get('/')->assertForbidden();
+
+        $this->app['auth']->forgetGuards();
+
+        // Uji juga penolakan langsung pada form login untuk status arsip maupun draf
+        $this->from('/login')
+            ->post('/login', [
+                'username' => 'penjaga_arsip',
+                'password' => 'password',
+            ])
+            ->assertRedirect('/login')
+            ->assertSessionHasErrors([
+                'username' => trans('auth.property_inactive'),
+            ]);
+        $this->assertGuest();
+
+        $properti->update(['status' => 'draf']);
+
+        $this->from('/login')
+            ->post('/login', [
+                'username' => 'penjaga_arsip',
+                'password' => 'password',
+            ])
+            ->assertRedirect('/login')
+            ->assertSessionHasErrors([
+                'username' => trans('auth.property_inactive'),
+            ]);
+        $this->assertGuest();
     }
 
     public function test_login_ditolak_jika_password_salah(): void

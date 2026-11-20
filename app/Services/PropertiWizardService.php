@@ -271,14 +271,66 @@ class PropertiWizardService
 
         app(PengaturanService::class)->bersihkanCache($properti);
 
-        $hasilAktivasi = null;
-        if ($aktifkan && $properti->fresh()->status !== 'aktif') {
-            $hasilAktivasi = $this->aktifkanProperti($properti->fresh(), $aktor);
-        }
+        $statusDiminta = $aktifkan
+            ? 'aktif'
+            : (string) ($data['status'] ?? $properti->status);
+
+        $hasilAktivasi = $this->ubahStatusProperti(
+            properti: $properti->fresh(),
+            statusBaru: $statusDiminta,
+            aktor: $aktor,
+            wajibSyaratAktivasi: $statusDiminta === 'aktif',
+        );
 
         return [
             'staf_baru' => $stafBaru,
-            'hasil_aktivasi' => $hasilAktivasi,
+            'hasil_aktivasi' => $hasilAktivasi['alasan'] !== [] || ($aktifkan && $statusDiminta === 'aktif') ? $hasilAktivasi : null,
         ];
+    }
+
+    /**
+     * Ubah status properti (aktif/draf/arsip) sambil mencabut sesi aktif staf saat dinonaktifkan.
+     *
+     * @return array{berhasil: bool, alasan: array<int, string>}
+     */
+    public function ubahStatusProperti(
+        Properti $properti,
+        string $statusBaru,
+        ?User $aktor = null,
+        bool $wajibSyaratAktivasi = false
+    ): array {
+        $statusLama = $properti->status;
+
+        if ($statusBaru === $statusLama) {
+            return ['berhasil' => true, 'alasan' => []];
+        }
+
+        if ($statusBaru === 'aktif' && $wajibSyaratAktivasi) {
+            return $this->aktifkanProperti($properti, $aktor);
+        }
+
+        DB::transaction(function () use ($properti, $statusLama, $statusBaru, $aktor): void {
+            $properti->update(['status' => $statusBaru]);
+
+            if ($statusBaru !== 'aktif') {
+                $stafIds = $properti->pengguna()->pluck('id');
+
+                if ($stafIds->isNotEmpty()) {
+                    DB::table('sessions')->whereIn('user_id', $stafIds)->delete();
+                }
+            }
+
+            AuditLog::query()->create([
+                'properti_id' => $properti->id,
+                'user_id' => $aktor?->id,
+                'aksi' => 'properti_ubah_status',
+                'subjek_type' => Properti::class,
+                'subjek_id' => $properti->id,
+                'sebelum' => ['status' => $statusLama],
+                'sesudah' => ['status' => $statusBaru],
+            ]);
+        });
+
+        return ['berhasil' => true, 'alasan' => []];
     }
 }

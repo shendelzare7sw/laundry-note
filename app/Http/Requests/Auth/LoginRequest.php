@@ -67,6 +67,18 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if ($user->role->isStafProperti()) {
+            $properti = $user->properti;
+
+            if ($properti === null || $properti->status !== 'aktif') {
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'username' => trans('auth.property_inactive'),
+                ]);
+            }
+        }
+
         Auth::login($user, $this->boolean('remember'));
         RateLimiter::clear($this->throttleKey());
     }

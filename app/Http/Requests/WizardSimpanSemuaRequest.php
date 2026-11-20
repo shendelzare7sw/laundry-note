@@ -48,6 +48,7 @@ class WizardSimpanSemuaRequest extends FormRequest
             'nama' => ['required', 'string', 'max:120'],
             'nama_properti_laporan' => ['required', 'string', 'max:120'],
             'alamat' => ['nullable', 'string', 'max:500'],
+            'status' => ['nullable', Rule::in(['draf', 'aktif', 'arsip'])],
 
             'tarif_per_kg' => ['required', 'integer', 'min:100', 'max:1000000'],
             'min_kg' => ['required', 'numeric', 'min:0', 'max:50'],
@@ -90,6 +91,7 @@ class WizardSimpanSemuaRequest extends FormRequest
             'nama_properti_laporan.required' => 'Nama properti di laporan belum diisi.',
             'nama_properti_laporan.max' => 'Nama properti di laporan maksimal 120 karakter.',
             'alamat.max' => 'Alamat properti maksimal 500 karakter.',
+            'status.in' => 'Status operasional properti yang dipilih tidak valid.',
             'tarif_per_kg.required' => 'Tarif laundry per kg belum diisi.',
             'tarif_per_kg.integer' => 'Tarif laundry per kg harus berupa angka bulat rupiah.',
             'tarif_per_kg.min' => 'Tarif laundry per kg minimal Rp100.',

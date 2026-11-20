@@ -62,23 +62,24 @@
                     placeholder="Keterangan singkat properti"
                 />
 
-                <div class="flex items-center justify-between gap-4 rounded-xl border border-line bg-alt p-4 md:col-span-2">
-                    <div>
-                        <div class="text-sm font-bold text-ink">Status Aktif</div>
-                        <p class="text-xs text-muted">Properti nonaktif tidak muncul untuk staff.</p>
-                    </div>
-
-                    <label class="relative inline-flex cursor-pointer items-center">
-                        <input
-                            type="checkbox"
-                            name="status_aktif"
-                            value="1"
-                            @checked(old('status', $properti->status) === 'aktif')
-                            class="peer sr-only"
+                <div class="md:col-span-2 rounded-xl border border-line bg-alt p-4">
+                    <x-field
+                        label="Status Aktif & Operasional"
+                        name="status"
+                        id="edit-status"
+                        :required="true"
+                        hint="Mengubah ke Draf atau Nonaktif (Arsip) langsung mencabut sesi & akses login staf properti ini, tetapi seluruh data laundry, kontrak, penghuni, dan kamar tetap tersimpan."
+                    >
+                        <select
+                            id="edit-status"
+                            name="status"
+                            class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink focus:border-maroon focus:outline-none"
                         >
-                        <span class="h-7 w-12 rounded-full bg-line-strong transition-colors peer-checked:bg-maroon peer-focus-visible:outline-2 peer-focus-visible:outline-maroon"></span>
-                        <span class="absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-xs transition-transform peer-checked:translate-x-5"></span>
-                    </label>
+                            <option value="aktif" @selected(old('status', $properti->status) === 'aktif')>Aktif — Operasional berjalan & staf bisa login</option>
+                            <option value="draf" @selected(old('status', $properti->status) === 'draf')>Draf — Dalam penyusunan setup, akses staf dikunci</option>
+                            <option value="arsip" @selected(old('status', $properti->status) === 'arsip')>Nonaktif / Arsip — Operasional berhenti sementara, data historis aman</option>
+                        </select>
+                    </x-field>
                 </div>
 
                 <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end md:col-span-2">

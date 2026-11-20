@@ -72,6 +72,25 @@
                         form="form-setup-semua"
                     />
                 </div>
+                <div class="sm:col-span-2">
+                    <x-field
+                        label="Status Operasional Properti"
+                        name="status"
+                        id="setup-status"
+                        hint="Jika diubah ke Draf atau Nonaktif (Arsip), staf (admin & penjaga) tidak bisa login, sedangkan data laundry, kontrak, penghuni, dan kamar tetap aman."
+                    >
+                        <select
+                            id="setup-status"
+                            name="status"
+                            form="form-setup-semua"
+                            class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink focus:border-maroon focus:outline-none"
+                        >
+                            <option value="aktif" @selected(old('status', $properti->status) === 'aktif')>Aktif — Staf dapat login dan operasional berjalan</option>
+                            <option value="draf" @selected(old('status', $properti->status) === 'draf')>Draf — Masih tahap setup, akses staf dikunci</option>
+                            <option value="arsip" @selected(old('status', $properti->status) === 'arsip')>Nonaktif / Arsip — Operasional dihentikan, semua data tetap tersimpan</option>
+                        </select>
+                    </x-field>
+                </div>
                 <div class="sm:col-span-2 flex justify-end">
                     <button
                         type="submit"
@@ -290,7 +309,7 @@
                     <div class="text-xs text-muted sm:text-sm">
                         @if ($properti->status === 'aktif')
                             <i class="fas fa-circle-check mr-1 text-ok" aria-hidden="true"></i>
-                            Properti ini sudah berstatus <strong class="text-ok">Aktif</strong> dan siap digunakan staf.
+                            Properti ini berstatus <strong class="text-ok">Aktif</strong> dan siap digunakan staf. Untuk menghentikan akses login staf sementara tanpa menghapus data, ubah <strong>Status Operasional</strong> di Langkah 1 menjadi <strong>Draf</strong> atau <strong>Nonaktif / Arsip</strong>.
                         @elseif ($siapKamar && $siapAdmin)
                             <i class="fas fa-circle-info mr-1 text-gold" aria-hidden="true"></i>
                             Seluruh syarat minimum terpenuhi. Anda dapat menyimpan sekaligus mengaktifkan properti sekarang.

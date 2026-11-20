@@ -5,11 +5,14 @@ namespace Tests\Feature;
 use App\Enums\Peran;
 use App\Models\AuditLog;
 use App\Models\Kamar;
+use App\Models\Laundry;
 use App\Models\Pengaturan;
+use App\Models\Penghuni;
 use App\Models\Properti;
 use App\Models\User;
 use Database\Seeders\PengaturanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class WizardSetupPropertiTest extends TestCase
@@ -256,5 +259,119 @@ class WizardSetupPropertiTest extends TestCase
             'validation.required_with',
             implode(' ', session('errors')->all())
         );
+    }
+
+    public function test_menonaktifkan_properti_ke_arsip_atau_draf_blokir_staf_tanpa_hapus_data_operasional(): void
+    {
+        $this->seed(PengaturanSeeder::class);
+
+        $owner = User::factory()->create([
+            'username' => 'owner_arsip_uji',
+            'role' => Peran::Owner,
+            'aktif' => true,
+        ]);
+
+        $properti = Properti::query()->create([
+            'owner_id' => $owner->id,
+            'nama' => 'Dbata Nonaktif Uji',
+            'nama_properti_laporan' => 'Dbata Nonaktif Uji',
+            'status' => 'aktif',
+        ]);
+
+        $kamar = Kamar::query()->create([
+            'properti_id' => $properti->id,
+            'nomor' => '101',
+            'lantai' => 1,
+            'aktif' => true,
+        ]);
+
+        $admin = User::factory()->create([
+            'username' => 'admin_arsip_uji',
+            'role' => Peran::Admin,
+            'properti_id' => $properti->id,
+            'aktif' => true,
+        ]);
+
+        $penghuni = Penghuni::query()->create([
+            'properti_id' => $properti->id,
+            'nama' => 'Penghuni Tetap Aman',
+            'status' => 'aktif',
+            'tanggal_masuk' => '2026-11-01',
+        ]);
+
+        Laundry::query()->create([
+            'properti_id' => $properti->id,
+            'tanggal' => '2026-11-10',
+            'jenis' => 'penghuni',
+            'penghuni_id' => $penghuni->id,
+            'kamar_id' => $kamar->id,
+            'berat_kg' => '3.50',
+            'biaya_utama' => 28000,
+            'dicatat_oleh' => $admin->id,
+        ]);
+
+        DB::table('sessions')->insert([
+            'id' => 'sesi-admin-uji',
+            'user_id' => $admin->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'PHPUnit',
+            'payload' => 'test',
+            'last_activity' => time(),
+        ]);
+
+        // 1. Owner ubah status properti ke arsip melalui form edit
+        $this->actingAs($owner)
+            ->put(route('properti.update', $properti), [
+                'nama' => 'Dbata Nonaktif Uji',
+                'nama_properti_laporan' => 'Dbata Nonaktif Uji',
+                'status' => 'arsip',
+            ])
+            ->assertRedirect(route('properti.index'));
+
+        $this->assertSame('arsip', $properti->fresh()->status);
+        $this->assertDatabaseMissing('sessions', ['user_id' => $admin->id]);
+
+        // 2. Seluruh data operasional tetap utuh
+        $this->assertDatabaseHas('kamar', ['id' => $kamar->id]);
+        $this->assertDatabaseHas('penghuni', ['id' => $penghuni->id]);
+        $this->assertDatabaseHas('laundry', ['penghuni_id' => $penghuni->id, 'biaya_utama' => 28000]);
+
+        // 3. Staf properti tidak bisa login saat status arsip/draf, lalu bisa login lagi saat diaktifkan kembali
+        $this->app['auth']->forgetGuards();
+
+        $this->from('/login')
+            ->post('/login', [
+                'username' => 'admin_arsip_uji',
+                'password' => 'password',
+            ])
+            ->assertRedirect('/login')
+            ->assertSessionHasErrors(['username' => trans('auth.property_inactive')]);
+        $this->assertGuest();
+
+        $this->actingAs($owner)
+            ->post(route('properti.setup.simpan-semua', $properti), [
+                'nama' => 'Dbata Nonaktif Uji',
+                'nama_properti_laporan' => 'Dbata Nonaktif Uji',
+                'status' => 'aktif',
+                'tarif_per_kg' => 8000,
+                'min_kg' => 2,
+                'kuota_kg' => 20,
+                'ambang_mendekati_persen' => 75,
+                'toleransi_kg' => 1,
+                'pembulatan' => 1000,
+                'mode_kuota' => 'penghuni',
+                'jam_edit_penjaga' => 24,
+            ])
+            ->assertRedirect(route('properti.setup.tampilkan', $properti));
+
+        $this->assertSame('aktif', $properti->fresh()->status);
+
+        $this->app['auth']->forgetGuards();
+
+        $this->post('/login', [
+            'username' => 'admin_arsip_uji',
+            'password' => 'password',
+        ])->assertRedirect(route('beranda', absolute: false));
+        $this->assertAuthenticatedAs($admin);
     }
 }
