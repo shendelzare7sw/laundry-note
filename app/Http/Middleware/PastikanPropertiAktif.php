@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 class PastikanPropertiAktif
 {
     /**
-     * Tetapkan properti aktif sesuai peran pengguna dan pastikan akun masih aktif.
+     * Tetapkan properti aktif sesuai peran pengguna dan pastikan akun serta properti valid.
      *
      * @param  Closure(Request): Response  $next
      */
@@ -41,6 +41,10 @@ class PastikanPropertiAktif
                 abort(403, 'Akun Anda belum terhubung ke properti mana pun.');
             }
 
+            if ($properti->status !== 'aktif') {
+                abort(403, 'Properti penempatan Anda sedang tidak aktif.');
+            }
+
             $routeProperti = $request->route('properti');
 
             if ($routeProperti !== null) {
@@ -65,15 +69,22 @@ class PastikanPropertiAktif
             : $user->propertiDimiliki()->orderBy('id')->get();
 
         $propertiAktifId = (int) $request->session()->get('properti_aktif_id', 0);
-        $properti = $daftarProperti->firstWhere('id', $propertiAktifId) ?? $daftarProperti->first();
+        $properti = $propertiAktifId > 0
+            ? $daftarProperti->firstWhere('id', $propertiAktifId)
+            : null;
 
         if ($properti !== null) {
             app()->instance('properti.aktif', $properti);
-            $request->session()->put('properti_aktif_id', $properti->id);
+        } elseif ($propertiAktifId > 0) {
+            $request->session()->forget('properti_aktif_id');
         }
 
         View::share('propertiAktif', $properti);
         View::share('daftarProperti', $daftarProperti);
+
+        if ($properti === null && $request->routeIs('beranda', 'laundry.*', 'penghuni.*', 'laporan.*')) {
+            return redirect()->route('properti.index');
+        }
 
         return $next($request);
     }

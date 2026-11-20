@@ -26,7 +26,9 @@ Route::middleware(['auth', 'properti.aktif'])->group(function (): void {
 
     Route::get('/properti', [PropertiController::class, 'index'])->name('properti.index');
     Route::post('/properti', [PropertiController::class, 'store'])->name('properti.store');
+    Route::post('/properti/lepas', [PropertiController::class, 'lepas'])->name('properti.lepas');
     Route::get('/properti/{properti}', [PropertiController::class, 'tampilkan'])->name('properti.tampilkan');
+    Route::get('/properti/{properti}/edit', [PropertiController::class, 'edit'])->name('properti.edit');
     Route::put('/properti/{properti}', [PropertiController::class, 'update'])->name('properti.update');
     Route::post('/properti/pilih/{properti}', [PropertiController::class, 'pilih'])->name('properti.pilih');
 

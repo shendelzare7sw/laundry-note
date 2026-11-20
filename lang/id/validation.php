@@ -27,6 +27,8 @@ return [
         'nama' => 'nama properti',
         'nama_properti_laporan' => 'nama properti di laporan',
         'alamat' => 'alamat',
+        'no_wa_admin' => 'nomor WhatsApp admin',
+        'deskripsi' => 'deskripsi',
         'status' => 'status',
     ],
 ];

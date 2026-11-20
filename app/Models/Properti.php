@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['owner_id', 'nama', 'alamat', 'nama_properti_laporan', 'status'])]
+#[Fillable(['owner_id', 'nama', 'alamat', 'no_wa_admin', 'deskripsi', 'nama_properti_laporan', 'status'])]
 class Properti extends Model
 {
     use HasFactory, SoftDeletes;

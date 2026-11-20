@@ -21,6 +21,15 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
+        $user = $request->user();
+
+        if ($user !== null && $user->role->isGlobal()) {
+            $request->session()->forget('properti_aktif_id');
+            $request->session()->forget('url.intended');
+
+            return redirect()->route('properti.index');
+        }
+
         return redirect()->intended(route('beranda', absolute: false));
     }
 

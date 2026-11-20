@@ -19,7 +19,10 @@ class PropertiController extends Controller
         Gate::authorize('viewAny', Properti::class);
 
         $user = $request->user();
-        $query = Properti::query()->with(['adminAktif', 'owner'])->orderBy('id');
+        $query = Properti::query()
+            ->with(['adminAktif', 'owner'])
+            ->withCount(['kamar', 'penghuni'])
+            ->orderBy('id');
 
         if ($user->isOwner()) {
             $query->where('owner_id', $user->id);
@@ -41,6 +44,8 @@ class PropertiController extends Controller
             'owner_id' => $ownerId,
             'nama' => $request->string('nama')->toString(),
             'alamat' => $request->input('alamat'),
+            'no_wa_admin' => $request->input('no_wa_admin'),
+            'deskripsi' => $request->input('deskripsi'),
             'nama_properti_laporan' => $request->string('nama_properti_laporan')->toString(),
             'status' => $request->string('status')->toString(),
         ]);
@@ -71,11 +76,22 @@ class PropertiController extends Controller
         ]);
     }
 
+    public function edit(Properti $properti): View
+    {
+        Gate::authorize('update', $properti);
+
+        return view('properti.edit', [
+            'properti' => $properti,
+        ]);
+    }
+
     public function update(PropertiRequest $request, Properti $properti): RedirectResponse
     {
         $properti->update([
             'nama' => $request->string('nama')->toString(),
             'alamat' => $request->input('alamat'),
+            'no_wa_admin' => $request->input('no_wa_admin'),
+            'deskripsi' => $request->input('deskripsi'),
             'nama_properti_laporan' => $request->string('nama_properti_laporan')->toString(),
             'status' => $request->string('status')->toString(),
         ]);
@@ -92,7 +108,16 @@ class PropertiController extends Controller
         $request->session()->put('properti_aktif_id', $properti->id);
 
         return redirect()
-            ->back(fallback: route('beranda'))
-            ->with('toast', ['tipe' => 'ok', 'pesan' => "Beralih ke properti \"{$properti->nama}\"."]);
+            ->route('beranda')
+            ->with('toast', ['tipe' => 'ok', 'pesan' => "Membuka properti \"{$properti->nama}\"."]);
+    }
+
+    public function lepas(Request $request): RedirectResponse
+    {
+        Gate::authorize('viewAny', Properti::class);
+
+        $request->session()->forget('properti_aktif_id');
+
+        return redirect()->route('properti.index');
     }
 }
