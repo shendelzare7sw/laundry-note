@@ -3,6 +3,8 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import Alpine from 'alpinejs';
 
+const DRAFT_PREFIX = 'laundry_kos_draf:';
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('appShell', () => ({
         drawerOpen: false,
@@ -51,6 +53,9 @@ document.addEventListener('alpine:init', () => {
         },
         klikLuar(event) {
             if (event.target === this.$el && this.closedby === 'any') {
+                if (window.__cobaTutupModalDenganCekDraf && window.__cobaTutupModalDenganCekDraf(this.$el)) {
+                    return;
+                }
                 this.$el.close();
             }
         },
@@ -115,10 +120,391 @@ document.addEventListener('click', (event) => {
     if (closeTrigger) {
         const dialog = closeTrigger.closest('dialog');
         if (dialog && typeof dialog.close === 'function') {
+            if (window.__cobaTutupModalDenganCekDraf && window.__cobaTutupModalDenganCekDraf(dialog)) {
+                event.preventDefault();
+                return;
+            }
             dialog.close();
         }
     }
 });
+
+function initDirtyFormGuard() {
+    const dialogDraf = document.getElementById('dialog-draf-keluar');
+    const lanjutBtn = document.getElementById('dialog-draf-lanjut');
+    const buangBtn = document.getElementById('dialog-draf-buang');
+    const simpanBtn = document.getElementById('dialog-draf-simpan');
+
+    const trackedForms = Array.from(document.querySelectorAll('form[data-track-dirty]'));
+    if (trackedForms.length === 0) {
+        return;
+    }
+
+    const baselines = new WeakMap();
+    let sedangSubmitResmi = false;
+    let pendingAction = null;
+
+    const daftarElemen = (form, sertakanPassword = true) =>
+        Array.from(form.elements).filter((el) => {
+            if (!el.name || el.disabled) {
+                return false;
+            }
+            if (['_token', '_method', 'aktifkan_sekarang'].includes(el.name)) {
+                return false;
+            }
+            if (['submit', 'button', 'reset', 'file'].includes(el.type)) {
+                return false;
+            }
+            if (!sertakanPassword && el.type === 'password') {
+                return false;
+            }
+            return true;
+        });
+
+    const ambilNilaiForm = (form, sertakanPassword = true) => {
+        const data = {};
+        for (const el of daftarElemen(form, sertakanPassword)) {
+            if (el.type === 'checkbox') {
+                data[el.name] = el.checked;
+            } else if (el.type === 'radio') {
+                if (el.checked) {
+                    data[el.name] = el.value;
+                } else if (!(el.name in data)) {
+                    data[el.name] = '';
+                }
+            } else {
+                data[el.name] = el.value ?? '';
+            }
+        }
+        return data;
+    };
+
+    const terapkanNilaiForm = (form, data) => {
+        if (!data || typeof data !== 'object') {
+            return;
+        }
+        for (const el of daftarElemen(form, true)) {
+            if (!(el.name in data)) {
+                continue;
+            }
+            const val = data[el.name];
+            if (el.type === 'checkbox') {
+                el.checked = Boolean(val);
+            } else if (el.type === 'radio') {
+                el.checked = el.value === String(val);
+            } else {
+                el.value = String(val ?? '');
+            }
+        }
+    };
+
+    const hapusDrafTersimpan = (form) => {
+        const key = form.dataset.draftKey;
+        if (!key) {
+            return;
+        }
+        try {
+            localStorage.removeItem(DRAFT_PREFIX + key);
+        } catch {
+            // Abaikan bila localStorage tidak tersedia
+        }
+        const banner = form.querySelector('[data-draft-banner]');
+        if (banner) {
+            banner.remove();
+        }
+    };
+
+    const simpanKeDraf = (form) => {
+        const key = form.dataset.draftKey;
+        if (!key) {
+            return;
+        }
+        const payload = {
+            waktu: new Date().toISOString(),
+            nilai: ambilNilaiForm(form, false),
+        };
+        try {
+            localStorage.setItem(DRAFT_PREFIX + key, JSON.stringify(payload));
+        } catch {
+            // Abaikan bila storage penuh
+        }
+        tampilkanBannerDraf(form);
+    };
+
+    const tampilkanBannerDraf = (form) => {
+        if (form.querySelector('[data-draft-banner]')) {
+            return;
+        }
+        const banner = document.createElement('div');
+        banner.setAttribute('data-draft-banner', 'true');
+        banner.className =
+            'mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gold/40 bg-gold-container px-4 py-3 text-xs text-on-gold sm:text-sm';
+
+        const teks = document.createElement('div');
+        teks.className = 'font-medium';
+        teks.textContent = 'Draf perubahan yang belum disimpan telah dipulihkan ke formulir ini.';
+
+        const resetBtn = document.createElement('button');
+        resetBtn.type = 'button';
+        resetBtn.className =
+            'inline-flex min-h-9 items-center justify-center rounded-lg border border-on-gold/30 bg-surface px-3 text-xs font-bold text-on-gold hover:bg-sunken';
+        resetBtn.textContent = 'Hapus Draf & Reset';
+        resetBtn.addEventListener('click', () => {
+            const baseline = baselines.get(form);
+            if (baseline) {
+                terapkanNilaiForm(form, baseline);
+            }
+            hapusDrafTersimpan(form);
+        });
+
+        banner.appendChild(teks);
+        banner.appendChild(resetBtn);
+        form.prepend(banner);
+    };
+
+    for (const form of trackedForms) {
+        baselines.set(form, ambilNilaiForm(form, true));
+
+        const key = form.dataset.draftKey;
+        if (key) {
+            try {
+                const raw = localStorage.getItem(DRAFT_PREFIX + key);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.nilai) {
+                        terapkanNilaiForm(form, parsed.nilai);
+                        tampilkanBannerDraf(form);
+                    }
+                }
+            } catch {
+                // Abaikan JSON draf rusak
+            }
+        }
+    }
+
+    const isFormDirty = (form) => {
+        const baseline = baselines.get(form);
+        if (!baseline) {
+            return false;
+        }
+        const current = ambilNilaiForm(form, true);
+        const keys = new Set([...Object.keys(baseline), ...Object.keys(current)]);
+        for (const k of keys) {
+            if (baseline[k] !== current[k]) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    const daftarFormHalamanDirty = () =>
+        trackedForms.filter((form) => {
+            const parentDialog = form.closest('dialog');
+            if (parentDialog && !parentDialog.open) {
+                return false;
+            }
+            return isFormDirty(form);
+        });
+
+    window.__hapusDrafSaatSubmit = (form) => {
+        sedangSubmitResmi = true;
+        if (form && form.matches && form.matches('form[data-track-dirty]')) {
+            hapusDrafTersimpan(form);
+        }
+    };
+
+    window.__cobaTutupModalDenganCekDraf = (dialogEl) => {
+        if (!dialogDraf || !dialogEl || dialogEl === dialogDraf) {
+            return false;
+        }
+        const modalForms = Array.from(dialogEl.querySelectorAll('form[data-track-dirty]')).filter(isFormDirty);
+        if (modalForms.length === 0) {
+            return false;
+        }
+        dialogEl.close();
+        pendingAction = {
+            type: 'modal',
+            modal: dialogEl,
+            forms: modalForms,
+        };
+        dialogDraf.showModal();
+        lanjutBtn?.focus();
+        return true;
+    };
+
+    const jalankanPendingAction = () => {
+        if (!pendingAction) {
+            return;
+        }
+        const action = pendingAction;
+        pendingAction = null;
+
+        if (action.type === 'link' && action.href) {
+            sedangSubmitResmi = true;
+            window.location.assign(action.href);
+        } else if (action.type === 'form' && action.targetForm) {
+            sedangSubmitResmi = true;
+            action.targetForm.dataset.bypassDirty = 'true';
+            if (typeof action.targetForm.requestSubmit === 'function') {
+                action.targetForm.requestSubmit(action.submitter || null);
+            } else {
+                HTMLFormElement.prototype.submit.call(action.targetForm);
+            }
+        }
+    };
+
+    if (dialogDraf && lanjutBtn && buangBtn && simpanBtn) {
+        lanjutBtn.addEventListener('click', () => {
+            const action = pendingAction;
+            pendingAction = null;
+            if (dialogDraf.open) {
+                dialogDraf.close();
+            }
+            if (action?.type === 'modal' && action.modal) {
+                action.modal.showModal();
+            }
+        });
+
+        buangBtn.addEventListener('click', () => {
+            if (pendingAction?.forms) {
+                for (const form of pendingAction.forms) {
+                    const baseline = baselines.get(form);
+                    if (baseline) {
+                        terapkanNilaiForm(form, baseline);
+                    }
+                    hapusDrafTersimpan(form);
+                }
+            }
+            if (dialogDraf.open) {
+                dialogDraf.close();
+            }
+            jalankanPendingAction();
+        });
+
+        simpanBtn.addEventListener('click', () => {
+            if (pendingAction?.forms) {
+                for (const form of pendingAction.forms) {
+                    simpanKeDraf(form);
+                }
+            }
+            if (dialogDraf.open) {
+                dialogDraf.close();
+            }
+            if (pendingAction?.type !== 'modal') {
+                window.dispatchEvent(
+                    new CustomEvent('toast', {
+                        detail: { tipe: 'ok', pesan: 'Perubahan disimpan sebagai draf lokal.' },
+                    })
+                );
+            }
+            jalankanPendingAction();
+        });
+
+        dialogDraf.addEventListener('click', (event) => {
+            if (event.target === dialogDraf) {
+                lanjutBtn.click();
+            }
+        });
+    }
+
+    document.addEventListener(
+        'click',
+        (event) => {
+            if (!dialogDraf || sedangSubmitResmi) {
+                return;
+            }
+            if (
+                event.defaultPrevented ||
+                event.button !== 0 ||
+                event.metaKey ||
+                event.ctrlKey ||
+                event.shiftKey ||
+                event.altKey
+            ) {
+                return;
+            }
+            const anchor = event.target.closest('a[href]');
+            if (!anchor) {
+                return;
+            }
+            const rawHref = anchor.getAttribute('href') || '';
+            if (
+                rawHref === '' ||
+                rawHref.startsWith('#') ||
+                rawHref.startsWith('javascript:') ||
+                anchor.target === '_blank' ||
+                anchor.hasAttribute('download')
+            ) {
+                return;
+            }
+
+            const dirtyForms = daftarFormHalamanDirty();
+            if (dirtyForms.length === 0) {
+                return;
+            }
+
+            event.preventDefault();
+            pendingAction = {
+                type: 'link',
+                href: anchor.href,
+                forms: dirtyForms,
+            };
+            dialogDraf.showModal();
+            lanjutBtn?.focus();
+        },
+        true
+    );
+
+    document.addEventListener(
+        'submit',
+        (event) => {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement) || sedangSubmitResmi) {
+                return;
+            }
+
+            // Jika yang di-submit adalah form yang dilacak itu sendiri, izinkan lanjut ke dialog konfirmasi simpan
+            if (form.matches('form[data-track-dirty]')) {
+                if (!form.dataset.confirmTitle) {
+                    window.__hapusDrafSaatSubmit(form);
+                }
+                return;
+            }
+
+            if (form.dataset.bypassDirty === 'true' || !dialogDraf) {
+                return;
+            }
+
+            const dirtyForms = daftarFormHalamanDirty();
+            if (dirtyForms.length === 0) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            pendingAction = {
+                type: 'form',
+                targetForm: form,
+                submitter: event.submitter || null,
+                forms: dirtyForms,
+            };
+            dialogDraf.showModal();
+            lanjutBtn?.focus();
+        },
+        true
+    );
+
+    window.addEventListener('beforeunload', (event) => {
+        if (sedangSubmitResmi) {
+            return;
+        }
+        if (daftarFormHalamanDirty().length > 0) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    });
+}
 
 function initConfirmDialog() {
     const dialog = document.getElementById('dialog-konfirmasi');
@@ -134,9 +520,11 @@ function initConfirmDialog() {
     }
 
     let pendingForm = null;
+    let pendingSubmitter = null;
 
     const tutupDialog = () => {
         pendingForm = null;
+        pendingSubmitter = null;
         if (dialog.open) {
             dialog.close();
         }
@@ -195,6 +583,7 @@ function initConfirmDialog() {
         }
 
         pendingForm = form;
+        pendingSubmitter = event.submitter || null;
         judulEl.textContent = title;
         pesanEl.textContent = form.dataset.confirmMessage || 'Apakah Anda yakin ingin melanjutkan tindakan ini?';
         yaBtn.textContent = form.dataset.confirmLabel || 'Ya, Lanjutkan';
@@ -214,6 +603,7 @@ function initConfirmDialog() {
 
     dialog.addEventListener('cancel', () => {
         pendingForm = null;
+        pendingSubmitter = null;
     });
 
     yaBtn.addEventListener('click', () => {
@@ -222,15 +612,25 @@ function initConfirmDialog() {
             return;
         }
         const formToSubmit = pendingForm;
+        const submitter = pendingSubmitter;
         pendingForm = null;
+        pendingSubmitter = null;
         formToSubmit.dataset.confirmed = 'true';
+        if (window.__hapusDrafSaatSubmit) {
+            window.__hapusDrafSaatSubmit(formToSubmit);
+        }
         if (dialog.open) {
             dialog.close();
         }
-        HTMLFormElement.prototype.submit.call(formToSubmit);
+        if (typeof formToSubmit.requestSubmit === 'function') {
+            formToSubmit.requestSubmit(submitter);
+        } else {
+            HTMLFormElement.prototype.submit.call(formToSubmit);
+        }
     });
 }
 
 window.Alpine = Alpine;
 Alpine.start();
+initDirtyFormGuard();
 initConfirmDialog();

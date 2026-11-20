@@ -146,4 +146,69 @@ class WizardSetupPropertiTest extends TestCase
         $this->actingAs($admin)->get(route('properti.setup.tampilkan', $properti))->assertForbidden();
         $this->actingAs($penjaga)->get(route('properti.setup.tampilkan', $properti))->assertForbidden();
     }
+
+    public function test_owner_dapat_menyimpan_semua_setup_sekaligus_termasuk_aturan_dan_staf_baru(): void
+    {
+        $this->seed(PengaturanSeeder::class);
+
+        $owner = User::factory()->create([
+            'username' => 'owner_all',
+            'role' => Peran::Owner,
+            'aktif' => true,
+        ]);
+
+        $properti = Properti::query()->create([
+            'owner_id' => $owner->id,
+            'nama' => 'Dbata Setup Terpadu',
+            'nama_properti_laporan' => 'Dbata Setup Terpadu',
+            'status' => 'draf',
+        ]);
+
+        Kamar::query()->create([
+            'properti_id' => $properti->id,
+            'nomor' => '101',
+            'lantai' => 1,
+            'aktif' => true,
+        ]);
+
+        $this->actingAs($owner)
+            ->post(route('properti.setup.simpan-semua', $properti), [
+                'nama' => 'Dbata Residence Utama',
+                'nama_properti_laporan' => 'Dbata Residence Utama',
+                'alamat' => 'Jl. H. Dero No. 48',
+                'tarif_per_kg' => 8500,
+                'min_kg' => 2,
+                'kuota_kg' => 20,
+                'ambang_mendekati_persen' => 75,
+                'toleransi_kg' => 1,
+                'pembulatan' => 1000,
+                'mode_kuota' => 'penghuni',
+                'jam_edit_penjaga' => 24,
+                'penjaga_kelola_kontrak' => 1,
+                'name' => 'Admin Utama',
+                'username' => 'admin_utama',
+                'password' => 'password123',
+                'role' => Peran::Admin->value,
+                'aktifkan_sekarang' => 1,
+            ])
+            ->assertRedirect(route('properti.setup.tampilkan', $properti))
+            ->assertSessionHasNoErrors();
+
+        $properti->refresh();
+        $this->assertSame('Dbata Residence Utama', $properti->nama);
+        $this->assertSame('aktif', $properti->status);
+
+        $this->assertDatabaseHas('pengaturan', [
+            'properti_id' => $properti->id,
+            'kunci' => 'penjaga_kelola_kontrak',
+            'nilai' => '1',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'username' => 'admin_utama',
+            'properti_id' => $properti->id,
+            'role' => Peran::Admin->value,
+            'aktif' => true,
+        ]);
+    }
 }

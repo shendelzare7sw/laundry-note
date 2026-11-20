@@ -43,3 +43,54 @@
         </div>
     </div>
 </dialog>
+
+<dialog
+    id="dialog-draf-keluar"
+    aria-labelledby="dialog-draf-judul"
+    aria-describedby="dialog-draf-pesan"
+    closedby="any"
+    class="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-line bg-surface p-0 text-ink shadow-xl"
+>
+    <div class="p-5 sm:p-6">
+        <div class="flex items-start gap-3.5">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gold-container text-on-gold">
+                <i class="fas fa-file-pen text-lg" aria-hidden="true"></i>
+            </span>
+
+            <div class="min-w-0 flex-1">
+                <h2 id="dialog-draf-judul" class="text-base font-bold text-ink">
+                    Perubahan Belum Disimpan
+                </h2>
+                <p id="dialog-draf-pesan" class="mt-1 text-sm leading-relaxed text-muted">
+                    Perubahan data pada formulir ini belum disimpan. Apakah Anda ingin menyimpannya sebagai draf terlebih dahulu atau langsung keluar?
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+            <button
+                id="dialog-draf-lanjut"
+                type="button"
+                autofocus
+                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-line-strong bg-surface px-4 text-sm font-bold text-ink hover:bg-sunken focus-visible:outline-2 focus-visible:outline-maroon"
+            >
+                Lanjut Mengedit
+            </button>
+            <button
+                id="dialog-draf-buang"
+                type="button"
+                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-danger/35 bg-danger/10 px-4 text-sm font-bold text-danger hover:bg-danger hover:text-white focus-visible:outline-2 focus-visible:outline-danger"
+            >
+                Keluar Tanpa Simpan
+            </button>
+            <button
+                id="dialog-draf-simpan"
+                type="button"
+                class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-maroon px-4 text-sm font-bold text-white hover:bg-maroon-cerah focus-visible:outline-2 focus-visible:outline-maroon"
+            >
+                <i class="fas fa-bookmark text-xs" aria-hidden="true"></i>
+                <span>Simpan Draf &amp; Keluar</span>
+            </button>
+        </div>
+    </div>
+</dialog>

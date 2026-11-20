@@ -48,6 +48,7 @@ Route::middleware(['auth', 'properti.aktif'])->group(function (): void {
     Route::post('/properti/{properti}/setup/kamar', [PropertiWizardController::class, 'simpanKamar'])->name('properti.setup.kamar');
     Route::post('/properti/{properti}/setup/aturan', [PropertiWizardController::class, 'simpanAturan'])->name('properti.setup.aturan');
     Route::post('/properti/{properti}/setup/aktifkan', [PropertiWizardController::class, 'aktifkan'])->name('properti.setup.aktifkan');
+    Route::post('/properti/{properti}/setup/simpan-semua', [PropertiWizardController::class, 'simpanSemua'])->name('properti.setup.simpan-semua');
 
     Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
     Route::post('/pengguna', [PenggunaController::class, 'store'])->name('pengguna.store');

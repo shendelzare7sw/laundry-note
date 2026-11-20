@@ -100,7 +100,13 @@
     </div>
 
     <x-modal id="modal-tambah-properti" judul="Tambah Properti Baru">
-        <form method="POST" action="{{ route('properti.store') }}" class="space-y-4">
+        <form
+            method="POST"
+            action="{{ route('properti.store') }}"
+            data-track-dirty
+            data-draft-key="tambah-properti"
+            class="space-y-4"
+        >
             @csrf
             <x-field label="Nama Properti" name="nama" :required="true" placeholder="Mis. Dbata Residence 2" />
             <x-field label="Nama Properti di Laporan" name="nama_properti_laporan" :required="true" placeholder="Mis. Dbata Residence 2" />

@@ -29,6 +29,8 @@
             <form
                 method="POST"
                 action="{{ route('properti.update', $properti) }}"
+                data-track-dirty
+                data-draft-key="edit-properti-{{ $properti->id }}"
                 data-confirm-title="Simpan Perubahan Properti?"
                 data-confirm-message="Perubahan data properti atau status aktif akan memengaruhi akses staf properti ini."
                 data-confirm-label="Ya, Simpan"
@@ -79,10 +81,16 @@
                     </label>
                 </div>
 
-                <div class="md:col-span-2 pt-2">
+                <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end md:col-span-2">
+                    <a
+                        href="{{ route('properti.index') }}"
+                        class="inline-flex min-h-12 items-center justify-center rounded-full border border-line-strong bg-surface px-6 text-sm font-bold text-ink transition-colors hover:bg-sunken"
+                    >
+                        Batal
+                    </a>
                     <button
                         type="submit"
-                        class="flex min-h-12 w-full items-center justify-center rounded-full bg-maroon px-6 text-sm font-bold text-white transition-colors hover:bg-maroon-cerah"
+                        class="flex min-h-12 flex-1 items-center justify-center rounded-full bg-maroon px-6 text-sm font-bold text-white transition-colors hover:bg-maroon-cerah sm:flex-initial sm:min-w-52"
                     >
                         Simpan Perubahan
                     </button>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\WizardAturanRequest;
 use App\Http\Requests\WizardKamarRequest;
+use App\Http\Requests\WizardSimpanSemuaRequest;
 use App\Models\Pengaturan;
 use App\Models\Properti;
 use App\Services\PropertiWizardService;
@@ -99,5 +100,45 @@ class PropertiWizardController extends Controller
         return redirect()
             ->route('properti.setup.tampilkan', $properti)
             ->with('toast', ['tipe' => 'ok', 'pesan' => "Properti \"{$properti->nama}\" sekarang aktif."]);
+    }
+
+    public function simpanSemua(
+        WizardSimpanSemuaRequest $request,
+        Properti $properti,
+        PropertiWizardService $wizard
+    ): RedirectResponse {
+        $data = $request->validated();
+        $data['penjaga_kelola_kontrak'] = $request->boolean('penjaga_kelola_kontrak') ? '1' : '0';
+
+        $hasil = $wizard->simpanSemuaSetup(
+            properti: $properti,
+            data: $data,
+            aktor: $request->user(),
+            aktifkan: $request->boolean('aktifkan_sekarang'),
+        );
+
+        if ($hasil['hasil_aktivasi'] !== null && ! $hasil['hasil_aktivasi']['berhasil']) {
+            return redirect()
+                ->route('properti.setup.tampilkan', $properti)
+                ->withErrors(['aktivasi' => $hasil['hasil_aktivasi']['alasan']])
+                ->with('toast', [
+                    'tipe' => 'warn',
+                    'pesan' => 'Data setup tersimpan, namun aktivasi ditunda: '.$hasil['hasil_aktivasi']['alasan'][0],
+                ]);
+        }
+
+        $rincian = ['Data properti & aturan laundry berhasil disimpan'];
+
+        if ($hasil['staf_baru'] !== null) {
+            $rincian[] = "akun staf \"{$hasil['staf_baru']->username}\" ditambahkan";
+        }
+
+        if ($hasil['hasil_aktivasi'] !== null && $hasil['hasil_aktivasi']['berhasil']) {
+            $rincian[] = 'properti diaktifkan';
+        }
+
+        return redirect()
+            ->route('properti.setup.tampilkan', $properti)
+            ->with('toast', ['tipe' => 'ok', 'pesan' => implode(', ', $rincian).'.']);
     }
 }

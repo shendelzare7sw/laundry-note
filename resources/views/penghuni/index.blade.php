@@ -285,6 +285,8 @@
                 <form
                     method="POST"
                     action="{{ route('penghuni.store') }}"
+                    data-track-dirty
+                    data-draft-key="penghuni-masuk-{{ $propertiAktif->id }}"
                     data-confirm-title="Simpan Penghuni Baru?"
                     data-confirm-message="Penghuni baru akan langsung menempati kamar yang dipilih dan tercatat di audit log."
                     data-confirm-label="Ya, Daftarkan"

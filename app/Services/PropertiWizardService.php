@@ -186,4 +186,99 @@ class PropertiWizardService
 
         return ['berhasil' => true, 'alasan' => []];
     }
+
+    /**
+     * Simpan data properti (Langkah 1), aturan laundry (Langkah 3), dan akun staf baru opsional (Langkah 4) sekaligus.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{staf_baru: ?User, hasil_aktivasi: ?array{berhasil: bool, alasan: array<int, string>}}
+     */
+    public function simpanSemuaSetup(Properti $properti, array $data, User $aktor, bool $aktifkan = false): array
+    {
+        $stafBaru = null;
+        $tanggal = now('Asia/Jakarta')->toDateString();
+
+        $kunciAturan = [
+            'tarif_per_kg',
+            'min_kg',
+            'kuota_kg',
+            'ambang_mendekati_persen',
+            'toleransi_kg',
+            'pembulatan',
+            'mode_kuota',
+            'jam_edit_penjaga',
+            'penjaga_kelola_kontrak',
+        ];
+
+        $aturan = [
+            'nama_properti' => (string) $data['nama_properti_laporan'],
+        ];
+
+        foreach ($kunciAturan as $kunci) {
+            if (array_key_exists($kunci, $data)) {
+                $aturan[$kunci] = $data[$kunci];
+            }
+        }
+
+        DB::transaction(function () use ($properti, $data, $aturan, $tanggal, $aktor, &$stafBaru): void {
+            $properti->update([
+                'nama' => (string) $data['nama'],
+                'nama_properti_laporan' => (string) $data['nama_properti_laporan'],
+                'alamat' => $data['alamat'] ?? null,
+            ]);
+
+            foreach ($aturan as $kunci => $nilai) {
+                Pengaturan::query()->updateOrCreate(
+                    [
+                        'properti_id' => $properti->id,
+                        'kunci' => $kunci,
+                        'berlaku_mulai' => $tanggal,
+                    ],
+                    [
+                        'nilai' => (string) $nilai,
+                        'diubah_oleh' => $aktor->id,
+                    ]
+                );
+            }
+
+            if (! empty($data['name']) && ! empty($data['username']) && ! empty($data['password'])) {
+                $role = Peran::from((string) $data['role']);
+
+                $stafBaru = User::query()->create([
+                    'name' => (string) $data['name'],
+                    'username' => (string) $data['username'],
+                    'password' => (string) $data['password'],
+                    'role' => $role,
+                    'properti_id' => $properti->id,
+                    'aktif' => true,
+                ]);
+            }
+
+            AuditLog::query()->create([
+                'properti_id' => $properti->id,
+                'user_id' => $aktor->id,
+                'aksi' => 'wizard_simpan_semua',
+                'subjek_type' => Properti::class,
+                'subjek_id' => $properti->id,
+                'sesudah' => [
+                    'nama' => $properti->nama,
+                    'nama_properti_laporan' => $properti->nama_properti_laporan,
+                    'aturan' => $aturan,
+                    'staf_baru' => $stafBaru?->username,
+                ],
+            ]);
+        });
+
+        app(PengaturanService::class)->bersihkanCache($properti);
+
+        $hasilAktivasi = null;
+        if ($aktifkan && $properti->fresh()->status !== 'aktif') {
+            $hasilAktivasi = $this->aktifkanProperti($properti->fresh(), $aktor);
+        }
+
+        return [
+            'staf_baru' => $stafBaru,
+            'hasil_aktivasi' => $hasilAktivasi,
+        ];
+    }
 }

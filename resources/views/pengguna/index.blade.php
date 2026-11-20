@@ -116,7 +116,17 @@
     </div>
 
     <x-modal id="modal-tambah-pengguna" judul="Tambah Akun Pengguna">
-        <form method="POST" action="{{ route('pengguna.store') }}" class="space-y-4">
+        <form
+            method="POST"
+            action="{{ route('pengguna.store') }}"
+            data-track-dirty
+            data-draft-key="tambah-pengguna"
+            data-confirm-title="Buat Akun Pengguna Baru?"
+            data-confirm-message="Akun staf baru akan langsung aktif dan dapat digunakan untuk masuk sesuai properti penempatannya."
+            data-confirm-label="Ya, Buat Akun"
+            data-confirm-variant="maroon"
+            class="space-y-4"
+        >
             @csrf
             <x-field label="Nama Lengkap" name="name" :required="true" placeholder="Nama karyawan" />
             <x-field label="Username" name="username" :required="true" placeholder="Huruf kecil tanpa spasi" />

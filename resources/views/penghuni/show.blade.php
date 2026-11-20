@@ -339,6 +339,8 @@
             <form
                 method="POST"
                 action="{{ route('penghuni.update', $penghuni) }}"
+                data-track-dirty
+                data-draft-key="ubah-penghuni-{{ $penghuni->id }}"
                 data-confirm-title="Simpan Perubahan Data?"
                 data-confirm-message="Perubahan nama, alias, atau catatan penghuni {{ $penghuni->nama }} akan disimpan dan dicatat ke audit log."
                 data-confirm-label="Ya, Simpan"
@@ -378,6 +380,8 @@
             <form
                 method="POST"
                 action="{{ route('penghuni.ganti-nomor', $penghuni) }}"
+                data-track-dirty
+                data-draft-key="ganti-wa-penghuni-{{ $penghuni->id }}"
                 data-confirm-title="Simpan Nomor WhatsApp Baru?"
                 data-confirm-message="Nomor WhatsApp {{ $penghuni->nama }} akan diperbarui dan dinormalisasi ke format 62."
                 data-confirm-label="Ya, Perbarui Nomor"
@@ -429,6 +433,8 @@
                 <form
                     method="POST"
                     action="{{ route('penghuni.pindah-kamar', $penghuni) }}"
+                    data-track-dirty
+                    data-draft-key="pindah-kamar-penghuni-{{ $penghuni->id }}"
                     data-confirm-title="Konfirmasi Pindah Kamar?"
                     data-confirm-message="Kamar lama {{ $kamarTerkini?->nomor }} akan ditutup satu hari sebelum tanggal pindah, dan kuota {{ $kuotaBulanIni['terpakai_kg'] }} kg tetap dilanjutkan."
                     data-confirm-label="Ya, Pindahkan"
@@ -484,6 +490,8 @@
             <form
                 method="POST"
                 action="{{ route('penghuni.keluar', $penghuni) }}"
+                data-track-dirty
+                data-draft-key="keluar-penghuni-{{ $penghuni->id }}"
                 data-confirm-title="Konfirmasi Penghuni Keluar?"
                 data-confirm-message="{{ $penghuni->nama }} akan berstatus keluar dan kamar {{ $kamarTerkini?->nomor }} langsung menjadi kosong."
                 data-confirm-label="Ya, Tandai Keluar"
@@ -529,6 +537,8 @@
             <form
                 method="POST"
                 action="{{ route('penghuni.penyesuaian-kuota', $penghuni) }}"
+                data-track-dirty
+                data-draft-key="penyesuaian-kuota-{{ $penghuni->id }}-{{ $kuotaBulanIni['bulan'] }}"
                 data-confirm-title="Simpan Penyesuaian Tagihan Kuota?"
                 data-confirm-message="Nominal tagihan lewat kuota bulan {{ $kuotaBulanIni['label_bulan'] }} untuk {{ $penghuni->nama }} akan memakai nilai manual Anda."
                 data-confirm-label="Ya, Simpan Nominal"
