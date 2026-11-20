@@ -273,7 +273,19 @@
                     </div>
                 </x-kartu>
 
-                <x-kartu judul="Catatan Laundry Terbaru" subjudul="Input dan edit penuh catatan laundry akan tersedia di Fase 3">
+                <x-kartu judul="Catatan Laundry Terbaru" subjudul="25 catatan terakhir (semua kamar)">
+                    @if ($penghuni->status !== 'booking' && auth()->user()->can('create', [\App\Models\Laundry::class, $propertiAktif]))
+                        <x-slot:aksi>
+                            <a
+                                href="{{ route('laundry.create', ['penghuni_id' => $penghuni->id]) }}"
+                                class="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-maroon px-3.5 text-xs font-bold text-white hover:bg-maroon-cerah"
+                            >
+                                <i class="fas fa-plus text-[10px]" aria-hidden="true"></i>
+                                <span>Catat Laundry</span>
+                            </a>
+                        </x-slot:aksi>
+                    @endif
+
                     @if ($catatanLaundry->isEmpty())
                         <p class="rounded-xl border border-dashed border-line-strong bg-alt px-4 py-6 text-center text-sm text-muted">
                             Belum ada catatan laundry untuk penghuni ini.
@@ -300,12 +312,25 @@
                                             </p>
                                         @endif
                                     </div>
-                                    <div class="text-right text-xs">
-                                        @if ($item->berat_kg !== null)
-                                            <span class="block font-bold text-ink">{{ str_replace('.', ',', rtrim(rtrim((string) $item->berat_kg, '0'), '.')) }} kg</span>
-                                        @endif
-                                        @if ($item->item_biaya > 0)
-                                            <span class="block font-bold text-on-gold">Terpisah Rp{{ number_format($item->item_biaya, 0, ',', '.') }}</span>
+                                    <div class="flex items-center gap-2.5 text-right text-xs">
+                                        <div>
+                                            @if ($item->berat_kg !== null)
+                                                <span class="block font-bold text-ink">{{ str_replace('.', ',', rtrim(rtrim((string) $item->berat_kg, '0'), '.')) }} kg</span>
+                                            @endif
+                                            @if ($item->biaya_utama !== null && $item->biaya_utama > 0)
+                                                <span class="block text-muted">Rp{{ number_format($item->biaya_utama, 0, ',', '.') }}</span>
+                                            @endif
+                                            @if ($item->item_biaya > 0)
+                                                <span class="block font-bold text-on-gold">Terpisah Rp{{ number_format($item->item_biaya, 0, ',', '.') }}</span>
+                                            @endif
+                                        </div>
+                                        @if (auth()->user()->can('update', $item))
+                                            <a
+                                                href="{{ route('laundry.edit', $item) }}"
+                                                class="inline-flex min-h-9 items-center rounded-lg border border-line-strong bg-surface px-2.5 text-xs font-bold text-ink hover:bg-sunken"
+                                            >
+                                                Ubah
+                                            </a>
                                         @endif
                                     </div>
                                 </div>

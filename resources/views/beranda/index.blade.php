@@ -10,6 +10,30 @@
 
     <div class="space-y-4">
         @if ($propertiAktif)
+            <div class="flex flex-wrap items-center gap-2">
+                <a
+                    href="{{ route('laundry.create') }}"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-full bg-maroon px-4 text-xs font-bold text-white shadow-xs transition-colors hover:bg-maroon-cerah sm:px-5 sm:text-sm"
+                >
+                    <i class="fas fa-plus text-xs" aria-hidden="true"></i>
+                    <span>Catat Laundry</span>
+                </a>
+                <a
+                    href="{{ route('laundry.index') }}"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 text-xs font-bold text-ink hover:bg-sunken sm:text-sm"
+                >
+                    <i class="fas fa-shirt text-xs text-muted" aria-hidden="true"></i>
+                    <span>Daftar Laundry</span>
+                </a>
+                <a
+                    href="{{ route('penghuni.index') }}"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 text-xs font-bold text-ink hover:bg-sunken sm:text-sm"
+                >
+                    <i class="fas fa-users text-xs text-muted" aria-hidden="true"></i>
+                    <span>Daftar Penghuni</span>
+                </a>
+            </div>
+
             <x-kartu judul="Informasi Properti" :subjudul="$propertiAktif->alamat ?: 'Alamat properti belum dilengkapi'">
                 <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <x-ringkasan-tile label="Total Berat Bulan Ini" :nilai="$totalBeratKg . ' kg'" :keterangan="$rentangBulan['label']" />

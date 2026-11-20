@@ -246,4 +246,63 @@ class LaundryControllerTest extends TestCase
             ->assertJsonPath('kuota.status', 'lewat')
             ->assertJsonCount(1, 'daftar_penghuni');
     }
+
+    public function test_tampilan_laundry_beranda_dan_penghuni_tanpa_inline_script_style_serta_riwayat_dan_pintasan(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-11-20 10:00:00', 'Asia/Jakarta'));
+
+        $catatan = app(LaundryService::class)->catat($this->propertiA, [
+            'jenis' => 'penghuni',
+            'tanggal' => '2026-11-20',
+            'penghuni_id' => $this->penghuniA->id,
+            'berat_kg' => '2,5',
+            'item' => [['nama' => 'Selimut', 'jumlah' => 1, 'biaya' => 15000]],
+        ], $this->adminA);
+
+        $catatan->delete();
+
+        $rute = [
+            route('laundry.index'),
+            route('laundry.create'),
+            route('laundry.terhapus'),
+            route('beranda'),
+            route('penghuni.show', $this->penghuniA),
+        ];
+
+        $catatan->restore();
+        $rute[] = route('laundry.edit', $catatan);
+
+        foreach ($rute as $url) {
+            $res = $this->actingAs($this->adminA)->get($url)->assertOk();
+            $html = $res->getContent();
+            $this->assertSame(0, preg_match('/<script\b(?![^>]*\bsrc=)[^>]*>/i', $html), "Inline script ditemukan di {$url}");
+            $this->assertSame(0, preg_match('/<style\b[^>]*>/i', $html), "Inline style ditemukan di {$url}");
+        }
+
+        $this->actingAs($this->adminA)
+            ->get(route('laundry.edit', $catatan))
+            ->assertSee('Riwayat Perubahan');
+
+        $this->actingAs($this->adminA)
+            ->get(route('beranda'))
+            ->assertSee(route('laundry.create'), false)
+            ->assertSee('Catat Laundry');
+
+        $this->actingAs($this->adminA)
+            ->get(route('penghuni.show', $this->penghuniA))
+            ->assertSee(route('laundry.create', ['penghuni_id' => $this->penghuniA->id]), false)
+            ->assertSee(route('laundry.edit', $catatan), false);
+
+        $kamar2 = Kamar::query()->create(['properti_id' => $this->propertiA->id, 'nomor' => '102', 'lantai' => 1, 'aktif' => true]);
+        $booking = app(PenempatanService::class)->masuk($this->propertiA, [
+            'nama' => 'Calon Tamu',
+            'kamar_id' => $kamar2->id,
+            'tanggal_masuk' => '2026-11-25',
+            'status' => 'booking',
+        ], $this->adminA)['penghuni'];
+
+        $this->actingAs($this->adminA)
+            ->get(route('penghuni.show', $booking))
+            ->assertDontSee(route('laundry.create', ['penghuni_id' => $booking->id]), false);
+    }
 }
