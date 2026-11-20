@@ -2,18 +2,28 @@
     <div class="space-y-4">
         <h1 class="text-xl font-bold text-ink">Menu Lainnya</h1>
 
-        <div class="grid gap-3 sm:grid-cols-2">
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             @can('viewAny', \App\Models\User::class)
-                <a href="{{ route('pengguna.index') }}" class="block rounded-2xl border border-line bg-surface p-4 shadow-xs hover:bg-alt">
-                    <div class="text-base font-bold text-ink">Kelola Pengguna</div>
-                    <p class="mt-1 text-xs text-muted">Tambah staf, nonaktifkan akun, dan reset password</p>
+                <a href="{{ route('pengguna.index') }}" class="flex items-start gap-3 rounded-2xl border border-line bg-surface p-4 shadow-xs hover:bg-alt">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-maroon/10 text-maroon">
+                        <i class="fas fa-user-gear" aria-hidden="true"></i>
+                    </span>
+                    <div>
+                        <div class="text-base font-bold text-ink">Kelola Pengguna</div>
+                        <p class="mt-0.5 text-xs text-muted">Tambah staf, nonaktifkan akun, dan reset password</p>
+                    </div>
                 </a>
             @endcan
 
             @can('viewAny', \App\Models\Properti::class)
-                <a href="{{ route('properti.index') }}" class="block rounded-2xl border border-line bg-surface p-4 shadow-xs hover:bg-alt">
-                    <div class="text-base font-bold text-ink">Kelola Properti</div>
-                    <p class="mt-1 text-xs text-muted">Kelola daftar properti dan ganti properti aktif</p>
+                <a href="{{ route('properti.index') }}" class="flex items-start gap-3 rounded-2xl border border-line bg-surface p-4 shadow-xs hover:bg-alt">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-container text-on-gold">
+                        <i class="fas fa-building" aria-hidden="true"></i>
+                    </span>
+                    <div>
+                        <div class="text-base font-bold text-ink">Kelola / Pilih Properti</div>
+                        <p class="mt-0.5 text-xs text-muted">Kelola daftar properti dan ganti properti aktif</p>
+                    </div>
                 </a>
             @endcan
         </div>
@@ -29,9 +39,10 @@
                     @csrf
                     <button
                         type="submit"
-                        class="min-h-11 rounded-xl bg-maroon px-4 text-sm font-bold text-white hover:bg-maroon-cerah"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-maroon px-4 text-sm font-bold text-white hover:bg-maroon-cerah"
                     >
-                        Keluar
+                        <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
+                        <span>Keluar</span>
                     </button>
                 </form>
             </div>

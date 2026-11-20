@@ -34,9 +34,10 @@
 
             <button
                 type="submit"
-                class="flex min-h-11 w-full items-center justify-center rounded-xl bg-maroon px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-maroon-cerah focus-visible:outline-2 focus-visible:outline-maroon"
+                class="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-maroon px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-maroon-cerah focus-visible:outline-2 focus-visible:outline-maroon"
             >
-                Masuk
+                <i class="fas fa-right-to-bracket" aria-hidden="true"></i>
+                <span>Masuk</span>
             </button>
         </form>
     </x-kartu>

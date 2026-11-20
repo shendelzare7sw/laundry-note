@@ -10,6 +10,8 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 
     --color-maroon: #8B1A1A;
+    --color-maroon-dark: #6E1414;
+    --color-maroon-darker: #520E0E;
     --color-maroon-cerah: #A11D1D;
     --color-maroon-strong: #C42626;
 
@@ -67,5 +69,5 @@ dialog::backdrop {
 }
 
 .bottom-nav-safe {
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
 }

@@ -12,7 +12,7 @@ class AutentikasiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_pengguna_dapat_login_dengan_username_dan_diarahkan_ke_beranda(): void
+    public function test_owner_diarahkan_ke_halaman_pilih_properti_saat_login(): void
     {
         $owner = User::factory()->create([
             'username' => 'owneruji',
@@ -20,7 +20,7 @@ class AutentikasiTest extends TestCase
             'aktif' => true,
         ]);
 
-        Properti::query()->create([
+        $properti = Properti::query()->create([
             'owner_id' => $owner->id,
             'nama' => 'Dbata Residence',
             'nama_properti_laporan' => 'Dbata Residence',
@@ -33,7 +33,66 @@ class AutentikasiTest extends TestCase
         ]);
 
         $this->assertAuthenticatedAs($owner);
-        $response->assertRedirect(route('beranda', absolute: false));
+        $response->assertRedirect(route('properti.index', absolute: false));
+
+        // Mengakses beranda sebelum memilih properti harus diarahkan ke /properti
+        $this->actingAs($owner)
+            ->get(route('beranda'))
+            ->assertRedirect(route('properti.index'));
+
+        // Setelah memilih properti, owner masuk ke beranda properti tersebut
+        $this->actingAs($owner)
+            ->post(route('properti.pilih', $properti))
+            ->assertRedirect(route('beranda'));
+
+        $this->actingAs($owner)
+            ->withSession(['properti_aktif_id' => $properti->id])
+            ->get(route('beranda'))
+            ->assertOk()
+            ->assertSee('Dbata Residence');
+    }
+
+    public function test_staf_properti_langsung_diarahkan_ke_beranda_saat_login(): void
+    {
+        $owner = User::factory()->create(['username' => 'owner_staf', 'role' => Peran::Owner]);
+        $properti = Properti::query()->create([
+            'owner_id' => $owner->id,
+            'nama' => 'Dbata Residence',
+            'nama_properti_laporan' => 'Dbata Residence',
+            'status' => 'aktif',
+        ]);
+
+        $penjaga = User::factory()->create([
+            'username' => 'penjaga_uji',
+            'role' => Peran::Penjaga,
+            'properti_id' => $properti->id,
+            'aktif' => true,
+        ]);
+
+        $this->post('/login', [
+            'username' => 'penjaga_uji',
+            'password' => 'password',
+        ])->assertRedirect(route('beranda', absolute: false));
+    }
+
+    public function test_staf_ditolak_jika_properti_penempatannya_nonaktif(): void
+    {
+        $owner = User::factory()->create(['username' => 'owner_arsip', 'role' => Peran::Owner]);
+        $properti = Properti::query()->create([
+            'owner_id' => $owner->id,
+            'nama' => 'Properti Nonaktif',
+            'nama_properti_laporan' => 'Properti Nonaktif',
+            'status' => 'arsip',
+        ]);
+
+        $penjaga = User::factory()->create([
+            'username' => 'penjaga_arsip',
+            'role' => Peran::Penjaga,
+            'properti_id' => $properti->id,
+            'aktif' => true,
+        ]);
+
+        $this->actingAs($penjaga)->get('/')->assertForbidden();
     }
 
     public function test_login_ditolak_jika_password_salah(): void

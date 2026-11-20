@@ -146,10 +146,36 @@ class PeranDanPropertiTest extends TestCase
             'properti_id' => $propertiB->id,
         ])->assertRedirect(route('pengguna.index'));
 
-        // DevAdmin dapat mengakses semua halaman
-        $this->actingAs($devAdmin)->get('/')->assertOk();
+        // DevAdmin dapat mengakses semua halaman (setelah memilih properti ke beranda, maupun daftar properti/pengguna)
         $this->actingAs($devAdmin)->get('/properti')->assertOk();
         $this->actingAs($devAdmin)->get('/pengguna')->assertOk();
+        $this->actingAs($devAdmin)
+            ->post(route('properti.pilih', $propertiA))
+            ->assertRedirect(route('beranda'));
+
+        // Owner dapat mengedit detail properti termasuk WA admin, deskripsi, dan status toggle
+        $this->actingAs($owner)
+            ->get(route('properti.edit', $propertiA))
+            ->assertOk()
+            ->assertSee('Status Aktif');
+
+        $this->actingAs($owner)
+            ->put(route('properti.update', $propertiA), [
+                'nama' => 'Dbata Residence',
+                'nama_properti_laporan' => 'Dbata Residence',
+                'alamat' => 'Jl. H. Dero No. 48',
+                'no_wa_admin' => '628153369948',
+                'deskripsi' => 'Cozy Rooms Affordable Price',
+                'status_aktif' => '1',
+            ])
+            ->assertRedirect(route('properti.index'));
+
+        $this->assertDatabaseHas('properti', [
+            'id' => $propertiA->id,
+            'no_wa_admin' => '628153369948',
+            'deskripsi' => 'Cozy Rooms Affordable Price',
+            'status' => 'aktif',
+        ]);
     }
 
     public function test_indeks_unik_menolak_admin_aktif_kedua_di_properti_yang_sama(): void

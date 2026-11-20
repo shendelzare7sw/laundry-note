@@ -67,17 +67,12 @@
 
         {{-- Langkah 2: Generator Kamar per Lantai --}}
         <x-kartu judul="Langkah 2 · Generator Kamar per Lantai" subjudul="Tambahkan rentang nomor kamar sekaligus per lantai secara idempoten">
-            <div
-                x-data="{
-                    baris: [{ lantai: 1, dari: 101, sampai: 109 }]
-                }"
-                class="space-y-4"
-            >
+            <div x-data="wizardKamar" class="space-y-4">
                 <form method="POST" action="{{ route('properti.setup.kamar', $properti) }}" class="space-y-3">
                     @csrf
                     <template x-for="(item, idx) in baris" :key="idx">
                         <div class="grid grid-cols-12 items-end gap-2 rounded-xl border border-line bg-alt p-3">
-                            <div class="col-span-3 sm:col-span-3">
+                            <div class="col-span-3">
                                 <label :for="'lantai-' + idx" class="block text-xs font-medium text-muted">Lantai</label>
                                 <input
                                     :id="'lantai-' + idx"
@@ -102,7 +97,7 @@
                                     class="mt-1 block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3 text-sm text-ink"
                                 >
                             </div>
-                            <div class="col-span-4 sm:col-span-4">
+                            <div class="col-span-5 sm:col-span-4">
                                 <label :for="'sampai-' + idx" class="block text-xs font-medium text-muted">Sampai Nomor</label>
                                 <input
                                     :id="'sampai-' + idx"
@@ -118,7 +113,7 @@
                                 <button
                                     type="button"
                                     x-show="baris.length > 1"
-                                    x-on:click="baris.splice(idx, 1)"
+                                    x-on:click="hapus(idx)"
                                     class="min-h-11 w-full rounded-xl border border-danger/30 px-3 text-xs font-bold text-danger hover:bg-danger/10"
                                 >
                                     Hapus
@@ -130,11 +125,7 @@
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <button
                             type="button"
-                            x-on:click="
-                                const lantaiBerikut = baris.length + 1;
-                                const awal = lantaiBerikut * 100 + 1;
-                                baris.push({ lantai: lantaiBerikut, dari: awal, sampai: awal + 9 });
-                            "
+                            x-on:click="tambah"
                             class="min-h-11 rounded-xl border border-line-strong bg-surface px-3.5 text-xs font-bold text-ink hover:bg-sunken"
                         >
                             + Tambah Baris Lantai

@@ -8,11 +8,11 @@
 
             <button
                 type="button"
-                x-data
-                x-on:click="$dispatch('buka-modal', 'modal-tambah-pengguna')"
-                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-maroon px-4 py-2 text-sm font-bold text-white hover:bg-maroon-cerah"
+                data-modal-open="modal-tambah-pengguna"
+                class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-maroon px-5 text-sm font-bold text-white hover:bg-maroon-cerah"
             >
-                + Tambah Akun
+                <i class="fas fa-plus text-xs" aria-hidden="true"></i>
+                <span>Tambah Akun</span>
             </button>
         </div>
 
@@ -26,7 +26,7 @@
             </x-kartu>
         @endif
 
-        <div class="space-y-3">
+        <div class="grid gap-3 md:grid-cols-2">
             @forelse ($daftarPengguna as $pengguna)
                 <x-kartu>
                     <div class="flex flex-wrap items-start justify-between gap-3">
@@ -59,8 +59,7 @@
 
                                 <button
                                     type="button"
-                                    x-data
-                                    x-on:click="$dispatch('buka-modal', 'modal-reset-{{ $pengguna->id }}')"
+                                    data-modal-open="modal-reset-{{ $pengguna->id }}"
                                     class="min-h-11 rounded-xl bg-gold-container px-3 text-xs font-bold text-on-gold hover:bg-gold/25"
                                 >
                                     Reset Password
@@ -76,7 +75,7 @@
                                     <div class="flex justify-end gap-2">
                                         <button
                                             type="button"
-                                            x-on:click="$dispatch('tutup-modal', 'modal-reset-{{ $pengguna->id }}')"
+                                            data-modal-close
                                             class="min-h-11 rounded-xl border border-line-strong px-4 text-sm text-ink hover:bg-sunken"
                                         >
                                             Batal
@@ -94,7 +93,7 @@
                     </div>
                 </x-kartu>
             @empty
-                <x-kartu>
+                <x-kartu class="md:col-span-2">
                     <p class="text-sm text-muted">Belum ada akun staf terdaftar.</p>
                 </x-kartu>
             @endforelse
@@ -140,7 +139,7 @@
             <div class="flex justify-end gap-2 pt-2">
                 <button
                     type="button"
-                    x-on:click="$dispatch('tutup-modal', 'modal-tambah-pengguna')"
+                    data-modal-close
                     class="min-h-11 rounded-xl border border-line-strong px-4 text-sm text-ink hover:bg-sunken"
                 >
                     Batal
