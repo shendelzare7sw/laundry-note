@@ -104,6 +104,47 @@ document.addEventListener('alpine:init', () => {
             }
         },
     }));
+
+    Alpine.data('kontrakSewa', (awal = {}) => ({
+        status: awal.status ?? 'aktif',
+        tanggalMasuk: awal.tanggalMasuk ?? '',
+        jangkaWaktu: awal.jangkaWaktu ?? 'tidak_tentu',
+        tanggalKeluarRencana: awal.tanggalKeluarRencana ?? '',
+        tanggalKeluar: awal.tanggalKeluar ?? '',
+        saatUbahJangkaWaktu() {
+            if (this.jangkaWaktu === 'tidak_tentu') {
+                this.tanggalKeluarRencana = '';
+                return;
+            }
+            this.hitungRencanaOtomatis();
+        },
+        saatUbahTanggalMasuk() {
+            if (this.jangkaWaktu !== 'tidak_tentu') {
+                this.hitungRencanaOtomatis();
+            }
+        },
+        hitungRencanaOtomatis() {
+            const tambahBulanMap = {
+                bulanan: 1,
+                '3_bulan': 3,
+                '6_bulan': 6,
+                '1_tahun': 12,
+            };
+            const tambah = tambahBulanMap[this.jangkaWaktu] ?? 0;
+            if (!tambah || !/^\d{4}-\d{2}-\d{2}$/.test(this.tanggalMasuk)) {
+                return;
+            }
+            const [y, m, d] = this.tanggalMasuk.split('-').map(Number);
+            const totalBulan = y * 12 + (m - 1) + tambah;
+            const targetTahun = Math.floor(totalBulan / 12);
+            const targetBulan = totalBulan % 12;
+            const akhirBulan = new Date(Date.UTC(targetTahun, targetBulan + 1, 0)).getUTCDate();
+            const targetHari = Math.min(d, akhirBulan);
+            const mm = String(targetBulan + 1).padStart(2, '0');
+            const dd = String(targetHari).padStart(2, '0');
+            this.tanggalKeluarRencana = `${targetTahun}-${mm}-${dd}`;
+        },
+    }));
 });
 
 document.addEventListener('click', (event) => {
@@ -341,6 +382,19 @@ function initInlineValidation() {
                     }
                 }
             }
+        }
+
+        // 5. Kontrak penghuni: tanggal keluar rencana / aktual tidak boleh sebelum tanggal masuk
+        const tglMasukEl = byName('tanggal_masuk');
+        const tglRencanaEl = byName('tanggal_keluar_rencana');
+        const tglKeluarEl = byName('tanggal_keluar');
+
+        if (tglMasukEl && tglMasukEl.value && tglRencanaEl && tglRencanaEl.value && tglRencanaEl.value < tglMasukEl.value) {
+            setError(tglRencanaEl, 'Tanggal keluar rencana tidak boleh sebelum tanggal masuk.');
+        }
+
+        if (tglMasukEl && tglMasukEl.value && tglKeluarEl && tglKeluarEl.value && tglKeluarEl.value < tglMasukEl.value) {
+            setError(tglKeluarEl, 'Tanggal keluar tidak boleh sebelum tanggal masuk.');
         }
     };
 

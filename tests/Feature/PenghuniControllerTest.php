@@ -6,6 +6,7 @@ use App\Enums\Peran;
 use App\Models\Kamar;
 use App\Models\Laundry;
 use App\Models\Pengaturan;
+use App\Models\Penghuni;
 use App\Models\Properti;
 use App\Models\User;
 use App\Services\PenempatanService;
@@ -238,5 +239,92 @@ class PenghuniControllerTest extends TestCase
             'bulan' => '2026-11',
             'nominal' => 15000,
         ]);
+    }
+
+    public function test_detail_kontrak_status_booking_aktif_selesai_dan_perhitungan_jangka_waktu_sewa(): void
+    {
+        // 1. Buat kontrak status Booking + jangka waktu Bulanan -> otomatis hitung tanggal_keluar_rencana (+1 bulan)
+        $resStore = $this->actingAs($this->adminA)->post(route('penghuni.store'), [
+            'nama' => 'Travis Kontrak',
+            'status' => 'booking',
+            'kamar_id' => $this->kamarA1->id,
+            'tanggal_masuk' => '2026-11-20',
+            'jangka_waktu_sewa' => 'bulanan',
+        ]);
+
+        $travis = Penghuni::query()->where('nama', 'Travis Kontrak')->firstOrFail();
+        $resStore->assertRedirect(route('penghuni.show', $travis));
+
+        $this->assertSame('booking', $travis->status);
+        $this->assertSame('bulanan', $travis->jangka_waktu_sewa);
+        $this->assertSame('2026-12-20', $travis->tanggal_keluar_rencana?->toDateString());
+
+        // Tampil di tab Booking & Semua, tetapi tidak di tab Aktif
+        $this->actingAs($this->adminA)
+            ->get(route('penghuni.index', ['tab' => 'booking']))
+            ->assertOk()
+            ->assertSee('Travis Kontrak')
+            ->assertSee('Booking');
+
+        $this->actingAs($this->adminA)
+            ->get(route('penghuni.index', ['tab' => 'aktif']))
+            ->assertOk()
+            ->assertDontSee('Travis Kontrak');
+
+        // 2. Ubah kontrak: status Aktif, ubah tanggal masuk & jangka waktu 6 Bulan (tgl keluar rencana terhitung otomatis)
+        $this->actingAs($this->adminA)
+            ->put(route('penghuni.update', $travis), [
+                'nama' => 'Travis Kontrak',
+                'status' => 'aktif',
+                'tanggal_masuk' => '2026-11-21',
+                'jangka_waktu_sewa' => '6_bulan',
+                'tanggal_keluar_rencana' => '',
+            ])
+            ->assertRedirect(route('penghuni.show', $travis));
+
+        $travis->refresh();
+        $this->assertSame('aktif', $travis->status);
+        $this->assertSame('2026-11-21', $travis->tanggal_masuk->toDateString());
+        $this->assertSame('6_bulan', $travis->jangka_waktu_sewa);
+        $this->assertSame('2027-05-21', $travis->tanggal_keluar_rencana?->toDateString());
+        $this->assertSame('2026-11-21', $travis->penempatan()->firstOrFail()->mulai->toDateString());
+
+        // 3. Pilih Tidak Tentu tanpa tgl keluar rencana (di-skip) maupun dengan tgl custom
+        $this->actingAs($this->adminA)
+            ->put(route('penghuni.update', $travis), [
+                'nama' => 'Travis Kontrak',
+                'status' => 'aktif',
+                'tanggal_masuk' => '2026-11-21',
+                'jangka_waktu_sewa' => 'tidak_tentu',
+                'tanggal_keluar_rencana' => '',
+            ])
+            ->assertRedirect(route('penghuni.show', $travis));
+
+        $this->assertNull($travis->fresh()->tanggal_keluar_rencana);
+
+        $this->actingAs($this->adminA)
+            ->put(route('penghuni.update', $travis), [
+                'nama' => 'Travis Kontrak',
+                'status' => 'keluar',
+                'tanggal_masuk' => '2026-11-21',
+                'jangka_waktu_sewa' => 'tidak_tentu',
+                'tanggal_keluar_rencana' => '2026-12-05',
+                'tanggal_keluar' => '2026-12-04',
+                'alasan_keluar' => 'Kontrak selesai',
+            ])
+            ->assertRedirect(route('penghuni.show', $travis));
+
+        $travis->refresh();
+        $this->assertSame('keluar', $travis->status);
+        $this->assertSame('2026-12-05', $travis->tanggal_keluar_rencana?->toDateString());
+        $this->assertSame('2026-12-04', $travis->tanggal_keluar?->toDateString());
+        $this->assertNull($travis->penempatanAktif);
+
+        // Tampil di tab Selesai
+        $this->actingAs($this->adminA)
+            ->get(route('penghuni.index', ['tab' => 'selesai']))
+            ->assertOk()
+            ->assertSee('Travis Kontrak')
+            ->assertSee('Selesai');
     }
 }

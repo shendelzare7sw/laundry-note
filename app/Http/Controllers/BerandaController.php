@@ -34,7 +34,7 @@ class BerandaController extends Controller
         if ($properti !== null) {
             $penghuniAktif = Penghuni::query()
                 ->where('properti_id', $properti->id)
-                ->where('status', 'aktif')
+                ->whereIn('status', ['aktif', 'booking'])
                 ->with('penempatanAktif.kamar')
                 ->get();
 

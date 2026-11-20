@@ -30,6 +30,7 @@ class MasukPenghuniRequest extends FormRequest
             'nama' => ['required', 'string', 'max:120'],
             'alias' => ['nullable', 'string', 'max:120'],
             'no_wa' => ['nullable', 'string', 'max:30'],
+            'status' => ['nullable', Rule::in(['booking', 'aktif'])],
             'kamar_id' => [
                 'required',
                 'integer',
@@ -37,6 +38,8 @@ class MasukPenghuniRequest extends FormRequest
             ],
             'tanggal_masuk' => ['required', 'date'],
             'tanggal_masuk_perkiraan' => ['sometimes', 'boolean'],
+            'jangka_waktu_sewa' => ['nullable', Rule::in(array_keys(Penghuni::DAFTAR_JANGKA_WAKTU))],
+            'tanggal_keluar_rencana' => ['nullable', 'date', 'after_or_equal:tanggal_masuk'],
             'catatan' => ['nullable', 'string', 'max:500'],
         ];
     }
@@ -61,11 +64,15 @@ class MasukPenghuniRequest extends FormRequest
             'nama.max' => 'Nama lengkap penghuni maksimal 120 karakter.',
             'alias.max' => 'Nama panggilan / alias maksimal 120 karakter.',
             'no_wa.max' => 'Nomor WhatsApp maksimal 30 karakter.',
+            'status.in' => 'Status kontrak harus Booking atau Aktif.',
             'kamar_id.required' => 'Kamar tujuan belum dipilih.',
             'kamar_id.integer' => 'Pilihan kamar tujuan tidak valid.',
             'kamar_id.exists' => 'Kamar yang dipilih tidak valid atau bukan milik properti ini.',
             'tanggal_masuk.required' => 'Tanggal masuk belum diisi.',
             'tanggal_masuk.date' => 'Format tanggal masuk tidak valid.',
+            'jangka_waktu_sewa.in' => 'Pilihan jangka waktu sewa tidak valid.',
+            'tanggal_keluar_rencana.date' => 'Format tanggal keluar rencana tidak valid.',
+            'tanggal_keluar_rencana.after_or_equal' => 'Tanggal keluar rencana tidak boleh sebelum tanggal masuk.',
             'catatan.max' => 'Catatan penghuni maksimal 500 karakter.',
         ];
     }

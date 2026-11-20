@@ -66,9 +66,12 @@ class PenempatanService
      *     nama: string,
      *     alias?: ?string,
      *     no_wa?: ?string,
+     *     status?: ?string,
      *     kamar_id: int,
      *     tanggal_masuk: string,
      *     tanggal_masuk_perkiraan?: bool,
+     *     jangka_waktu_sewa?: ?string,
+     *     tanggal_keluar_rencana?: ?string,
      *     catatan?: ?string
      * }  $data
      * @return array{penghuni: Penghuni, penempatan: Penempatan, peringatan: ?string}
@@ -89,6 +92,21 @@ class PenempatanService
             }
 
             $tanggalMasuk = CarbonImmutable::parse($data['tanggal_masuk'], 'Asia/Jakarta')->toDateString();
+            $statusInput = (string) ($data['status'] ?? 'aktif');
+            $status = in_array($statusInput, ['booking', 'aktif'], true) ? $statusInput : 'aktif';
+            $jangkaInput = (string) ($data['jangka_waktu_sewa'] ?? 'tidak_tentu');
+            $jangkaWaktu = array_key_exists($jangkaInput, Penghuni::DAFTAR_JANGKA_WAKTU) ? $jangkaInput : 'tidak_tentu';
+            $tanggalKeluarRencana = Penghuni::hitungTanggalKeluarRencana(
+                tanggalMasuk: $tanggalMasuk,
+                jangkaWaktu: $jangkaWaktu,
+                inputRencana: $data['tanggal_keluar_rencana'] ?? null,
+            );
+
+            if ($tanggalKeluarRencana !== null && $tanggalKeluarRencana < $tanggalMasuk) {
+                throw ValidationException::withMessages([
+                    'tanggal_keluar_rencana' => 'Tanggal keluar rencana tidak boleh sebelum tanggal masuk.',
+                ]);
+            }
 
             $adaBentrok = Penempatan::query()
                 ->where('kamar_id', $kamar->id)
@@ -113,9 +131,11 @@ class PenempatanService
                 'nama' => trim($data['nama']),
                 'alias' => $this->trimNullable($data['alias'] ?? null),
                 'no_wa' => $noWa !== '' ? $noWa : null,
-                'status' => 'aktif',
+                'status' => $status,
                 'tanggal_masuk' => $tanggalMasuk,
                 'tanggal_masuk_perkiraan' => (bool) ($data['tanggal_masuk_perkiraan'] ?? false),
+                'jangka_waktu_sewa' => $jangkaWaktu,
+                'tanggal_keluar_rencana' => $tanggalKeluarRencana,
                 'catatan' => $this->trimNullable($data['catatan'] ?? null),
             ]);
 
@@ -136,9 +156,12 @@ class PenempatanService
                 subjek: $penghuni,
                 sesudah: [
                     'nama' => $penghuni->nama,
+                    'status' => $status,
                     'kamar' => $kamar->nomor,
                     'no_wa' => $penghuni->no_wa,
                     'tanggal_masuk' => $tanggalMasuk,
+                    'jangka_waktu_sewa' => $jangkaWaktu,
+                    'tanggal_keluar_rencana' => $tanggalKeluarRencana,
                 ],
             );
 
@@ -165,9 +188,9 @@ class PenempatanService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($penghuniTerkunci->status !== 'aktif') {
+            if (! in_array($penghuniTerkunci->status, ['aktif', 'booking'], true)) {
                 throw ValidationException::withMessages([
-                    'tanggal_pindah' => 'Hanya penghuni berstatus aktif yang dapat dipindahkan kamarnya.',
+                    'tanggal_pindah' => 'Hanya penghuni berstatus booking atau aktif yang dapat dipindahkan kamarnya.',
                 ]);
             }
 
@@ -286,9 +309,9 @@ class PenempatanService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($penghuniTerkunci->status !== 'aktif') {
+            if (! in_array($penghuniTerkunci->status, ['aktif', 'booking'], true)) {
                 throw ValidationException::withMessages([
-                    'batalkan_pindah' => 'Perpindahan kamar hanya dapat dibatalkan untuk penghuni aktif.',
+                    'batalkan_pindah' => 'Perpindahan kamar hanya dapat dibatalkan untuk penghuni berstatus aktif atau booking.',
                 ]);
             }
 
@@ -384,9 +407,9 @@ class PenempatanService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($penghuniTerkunci->status !== 'aktif') {
+            if ($penghuniTerkunci->status === 'keluar') {
                 throw ValidationException::withMessages([
-                    'tanggal_keluar' => 'Penghuni ini sudah berstatus keluar.',
+                    'tanggal_keluar' => 'Penghuni ini sudah berstatus selesai / keluar.',
                 ]);
             }
 
@@ -575,13 +598,19 @@ class PenempatanService
     }
 
     /**
-     * Perbarui nama, alias, catatan, atau penanda tanggal masuk perkiraan penghuni.
+     * Perbarui data profil dan detail kontrak penghuni (status booking/aktif/selesai, tanggal masuk, jangka waktu sewa, tanggal keluar rencana).
      *
      * @param  array{
      *     nama: string,
      *     alias?: ?string,
      *     catatan?: ?string,
-     *     tanggal_masuk_perkiraan?: bool
+     *     status?: ?string,
+     *     tanggal_masuk?: ?string,
+     *     tanggal_masuk_perkiraan?: bool,
+     *     jangka_waktu_sewa?: ?string,
+     *     tanggal_keluar_rencana?: ?string,
+     *     tanggal_keluar?: ?string,
+     *     alasan_keluar?: ?string
      * }  $data
      */
     public function ubahData(Penghuni $penghuni, array $data, User $aktor): Penghuni
@@ -592,15 +621,162 @@ class PenempatanService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $sebelum = $penghuniTerkunci->only(['nama', 'alias', 'catatan', 'tanggal_masuk_perkiraan']);
+            $sebelum = $penghuniTerkunci->only([
+                'nama',
+                'alias',
+                'status',
+                'tanggal_masuk',
+                'tanggal_masuk_perkiraan',
+                'jangka_waktu_sewa',
+                'tanggal_keluar_rencana',
+                'tanggal_keluar',
+                'alasan_keluar',
+                'catatan',
+            ]);
+
+            $statusLama = $penghuniTerkunci->status;
+            $statusBaru = array_key_exists('status', $data) && in_array($data['status'], ['booking', 'aktif', 'keluar'], true)
+                ? (string) $data['status']
+                : $statusLama;
+
+            $tanggalMasuk = ! empty($data['tanggal_masuk'])
+                ? CarbonImmutable::parse((string) $data['tanggal_masuk'], 'Asia/Jakarta')->toDateString()
+                : $penghuniTerkunci->tanggal_masuk->toDateString();
+
+            $jangkaWaktu = array_key_exists('jangka_waktu_sewa', $data) && array_key_exists((string) $data['jangka_waktu_sewa'], Penghuni::DAFTAR_JANGKA_WAKTU)
+                ? (string) $data['jangka_waktu_sewa']
+                : ($penghuniTerkunci->jangka_waktu_sewa ?? 'tidak_tentu');
+
+            $punyaInputRencana = array_key_exists('tanggal_keluar_rencana', $data);
+            $tanggalKeluarRencana = $punyaInputRencana
+                ? Penghuni::hitungTanggalKeluarRencana($tanggalMasuk, $jangkaWaktu, $data['tanggal_keluar_rencana'])
+                : Penghuni::hitungTanggalKeluarRencana(
+                    $tanggalMasuk,
+                    $jangkaWaktu,
+                    $penghuniTerkunci->tanggal_keluar_rencana?->toDateString(),
+                );
+
+            if ($tanggalKeluarRencana !== null && $tanggalKeluarRencana < $tanggalMasuk) {
+                throw ValidationException::withMessages([
+                    'tanggal_keluar_rencana' => 'Tanggal keluar rencana tidak boleh sebelum tanggal masuk.',
+                ]);
+            }
+
+            $daftarPenempatan = Penempatan::query()
+                ->with('kamar')
+                ->where('penghuni_id', $penghuniTerkunci->id)
+                ->orderBy('mulai')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            $penempatanPertama = $daftarPenempatan->first();
+            $tanggalMasukLama = $penghuniTerkunci->tanggal_masuk->toDateString();
+
+            if ($tanggalMasuk !== $tanggalMasukLama && $penempatanPertama !== null) {
+                if ($penempatanPertama->selesai !== null && $tanggalMasuk > $penempatanPertama->selesai->toDateString()) {
+                    throw ValidationException::withMessages([
+                        'tanggal_masuk' => 'Tanggal masuk tidak boleh melewati tanggal selesai penempatan pertama ('.$penempatanPertama->selesai->format('d/m/Y').').',
+                    ]);
+                }
+
+                $bentrokMasuk = Penempatan::query()
+                    ->where('kamar_id', $penempatanPertama->kamar_id)
+                    ->whereKeyNot($penempatanPertama->id)
+                    ->whereDate('mulai', '<=', $penempatanPertama->selesai?->toDateString() ?? $tanggalMasuk)
+                    ->where(function ($query) use ($tanggalMasuk): void {
+                        $query->whereNull('selesai')->orWhereDate('selesai', '>=', $tanggalMasuk);
+                    })
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($bentrokMasuk) {
+                    throw ValidationException::withMessages([
+                        'tanggal_masuk' => "Tanggal masuk bertabrakan dengan penghuni sebelumnya di kamar {$penempatanPertama->kamar?->nomor}.",
+                    ]);
+                }
+
+                if ($penempatanPertama->sebab === 'masuk') {
+                    $penempatanPertama->update(['mulai' => $tanggalMasuk]);
+                }
+            }
+
+            $tanggalKeluar = $penghuniTerkunci->tanggal_keluar?->toDateString();
+            $alasanKeluar = $penghuniTerkunci->alasan_keluar;
+
+            if ($statusBaru === 'keluar') {
+                $tglKeluarBaru = ! empty($data['tanggal_keluar'])
+                    ? CarbonImmutable::parse((string) $data['tanggal_keluar'], 'Asia/Jakarta')->toDateString()
+                    : ($tanggalKeluar ?? $tanggalKeluarRencana ?? now('Asia/Jakarta')->toDateString());
+
+                if ($tglKeluarBaru < $tanggalMasuk) {
+                    throw ValidationException::withMessages([
+                        'tanggal_keluar' => 'Tanggal keluar tidak boleh sebelum tanggal masuk.',
+                    ]);
+                }
+
+                $penempatanAktif = $daftarPenempatan->firstWhere('selesai', null);
+                if ($penempatanAktif !== null) {
+                    if ($tglKeluarBaru < $penempatanAktif->mulai->toDateString()) {
+                        throw ValidationException::withMessages([
+                            'tanggal_keluar' => 'Tanggal keluar tidak boleh sebelum tanggal mulai penempatan aktif ('.$penempatanAktif->mulai->format('d/m/Y').').',
+                        ]);
+                    }
+                    $penempatanAktif->update(['selesai' => $tglKeluarBaru]);
+                }
+
+                $tanggalKeluar = $tglKeluarBaru;
+                $alasanKeluar = array_key_exists('alasan_keluar', $data)
+                    ? $this->trimNullable($data['alasan_keluar'])
+                    : $alasanKeluar;
+            } elseif ($statusLama === 'keluar') {
+                $penempatanTerakhir = $daftarPenempatan->last();
+
+                if ($penempatanTerakhir !== null) {
+                    $kamar = Kamar::query()->whereKey($penempatanTerakhir->kamar_id)->lockForUpdate()->firstOrFail();
+
+                    if (! $kamar->aktif) {
+                        throw ValidationException::withMessages([
+                            'status' => "Kamar {$kamar->nomor} sedang nonaktif, kontrak tidak dapat diaktifkan kembali otomatis.",
+                        ]);
+                    }
+
+                    $kamarBentrok = Penempatan::query()
+                        ->where('kamar_id', $kamar->id)
+                        ->whereKeyNot($penempatanTerakhir->id)
+                        ->where(function ($query) use ($penempatanTerakhir): void {
+                            $query->whereNull('selesai')
+                                ->orWhereDate('selesai', '>=', $penempatanTerakhir->mulai->toDateString());
+                        })
+                        ->lockForUpdate()
+                        ->exists();
+
+                    if ($kamarBentrok) {
+                        throw ValidationException::withMessages([
+                            'status' => "Kamar {$kamar->nomor} sudah ditempati penghuni lain.",
+                        ]);
+                    }
+
+                    $penempatanTerakhir->update(['selesai' => null]);
+                }
+
+                $tanggalKeluar = null;
+                $alasanKeluar = null;
+            }
 
             $penghuniTerkunci->update([
                 'nama' => trim($data['nama']),
                 'alias' => $this->trimNullable($data['alias'] ?? null),
-                'catatan' => $this->trimNullable($data['catatan'] ?? null),
+                'status' => $statusBaru,
+                'tanggal_masuk' => $tanggalMasuk,
                 'tanggal_masuk_perkiraan' => array_key_exists('tanggal_masuk_perkiraan', $data)
                     ? (bool) $data['tanggal_masuk_perkiraan']
                     : $penghuniTerkunci->tanggal_masuk_perkiraan,
+                'jangka_waktu_sewa' => $jangkaWaktu,
+                'tanggal_keluar_rencana' => $tanggalKeluarRencana,
+                'tanggal_keluar' => $tanggalKeluar,
+                'alasan_keluar' => $alasanKeluar,
+                'catatan' => $this->trimNullable($data['catatan'] ?? null),
             ]);
 
             $this->auditService->catat(
@@ -609,10 +785,21 @@ class PenempatanService
                 aksi: 'penghuni_ubah_data',
                 subjek: $penghuniTerkunci,
                 sebelum: $sebelum,
-                sesudah: $penghuniTerkunci->only(['nama', 'alias', 'catatan', 'tanggal_masuk_perkiraan']),
+                sesudah: $penghuniTerkunci->only([
+                    'nama',
+                    'alias',
+                    'status',
+                    'tanggal_masuk',
+                    'tanggal_masuk_perkiraan',
+                    'jangka_waktu_sewa',
+                    'tanggal_keluar_rencana',
+                    'tanggal_keluar',
+                    'alasan_keluar',
+                    'catatan',
+                ]),
             );
 
-            return $penghuniTerkunci;
+            return $penghuniTerkunci->fresh();
         });
     }
 

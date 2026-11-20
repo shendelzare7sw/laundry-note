@@ -279,10 +279,16 @@
                 <form
                     method="POST"
                     action="{{ route('penghuni.store') }}"
+                    x-data="kontrakSewa({
+                        status: @js(old('status', 'aktif')),
+                        tanggalMasuk: @js(old('tanggal_masuk', now('Asia/Jakarta')->toDateString())),
+                        jangkaWaktu: @js(old('jangka_waktu_sewa', 'bulanan')),
+                        tanggalKeluarRencana: @js(old('tanggal_keluar_rencana', \App\Models\Penghuni::hitungTanggalKeluarRencana(old('tanggal_masuk', now('Asia/Jakarta')->toDateString()), old('jangka_waktu_sewa', 'bulanan')) ?? ''))
+                    })"
                     data-track-dirty
                     data-draft-key="penghuni-masuk-{{ $propertiAktif->id }}"
-                    data-confirm-title="Simpan Penghuni Baru?"
-                    data-confirm-message="Penghuni baru akan langsung menempati kamar yang dipilih dan tercatat di audit log."
+                    data-confirm-title="Simpan Penghuni & Kontrak Baru?"
+                    data-confirm-message="Penghuni baru akan langsung tercatat pada kamar yang dipilih sesuai status kontraknya."
                     data-confirm-label="Ya, Daftarkan"
                     data-confirm-variant="maroon"
                     class="space-y-4"
@@ -291,27 +297,44 @@
                     <x-field label="Nama Lengkap" name="nama" id="masuk-nama" :required="true" placeholder="Mis. Riko Pratama" />
                     <x-field label="Nama Panggilan / Alias" name="alias" id="masuk-alias" placeholder="Opsional, membantu pencarian catatan" />
 
-                    <x-field label="Kamar Tujuan" name="kamar_id" id="masuk-kamar" :required="true">
-                        <select
-                            id="masuk-kamar"
-                            name="kamar_id"
-                            required
-                            class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20"
-                        >
-                            <option value="">-- Pilih Kamar Kosong --</option>
-                            @foreach ($kamarKosong as $kamar)
-                                <option value="{{ $kamar->id }}" @selected((string) old('kamar_id') === (string) $kamar->id)>
-                                    Kamar {{ $kamar->nomor }} (Lantai {{ $kamar->lantai }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </x-field>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <x-field label="Status Kontrak" name="status" id="masuk-status" :required="true">
+                            <select
+                                id="masuk-status"
+                                name="status"
+                                x-model="status"
+                                required
+                                class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20"
+                            >
+                                <option value="aktif">Aktif</option>
+                                <option value="booking">Booking</option>
+                            </select>
+                        </x-field>
+
+                        <x-field label="Kamar Tujuan" name="kamar_id" id="masuk-kamar" :required="true">
+                            <select
+                                id="masuk-kamar"
+                                name="kamar_id"
+                                required
+                                class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20"
+                            >
+                                <option value="">-- Pilih Kamar Kosong --</option>
+                                @foreach ($kamarKosong as $kamar)
+                                    <option value="{{ $kamar->id }}" @selected((string) old('kamar_id') === (string) $kamar->id)>
+                                        Kamar {{ $kamar->nomor }} (Lantai {{ $kamar->lantai }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </x-field>
+                    </div>
 
                     <x-field
                         label="Tanggal Masuk"
                         name="tanggal_masuk"
                         id="masuk-tanggal"
                         type="date"
+                        x-model="tanggalMasuk"
+                        x-on:change="saatUbahTanggalMasuk"
                         :value="old('tanggal_masuk', now('Asia/Jakarta')->toDateString())"
                         :required="true"
                     />
@@ -326,6 +349,31 @@
                         >
                         <span>Tanggal masuk merupakan perkiraan</span>
                     </label>
+
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <x-field label="Jangka Waktu Sewa" name="jangka_waktu_sewa" id="masuk-jangka-waktu" :required="true">
+                            <select
+                                id="masuk-jangka-waktu"
+                                name="jangka_waktu_sewa"
+                                x-model="jangkaWaktu"
+                                x-on:change="saatUbahJangkaWaktu"
+                                class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20"
+                            >
+                                @foreach (\App\Models\Penghuni::DAFTAR_JANGKA_WAKTU as $kodeJangka => $labelJangka)
+                                    <option value="{{ $kodeJangka }}">{{ $labelJangka }}</option>
+                                @endforeach
+                            </select>
+                        </x-field>
+
+                        <x-field
+                            label="Tgl Keluar Rencana"
+                            name="tanggal_keluar_rencana"
+                            id="masuk-keluar-rencana"
+                            type="date"
+                            x-model="tanggalKeluarRencana"
+                            hint="Otomatis terhitung untuk Bulanan–1 Tahun; boleh dikosongkan / custom jika Tidak Tentu."
+                        />
+                    </div>
 
                     <x-field
                         label="Nomor WhatsApp"

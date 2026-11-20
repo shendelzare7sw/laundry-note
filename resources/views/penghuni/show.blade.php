@@ -32,7 +32,10 @@
                         <span class="inline-flex items-center rounded-lg bg-maroon px-3 py-1 text-xs font-bold text-white">
                             Kamar {{ $kamarTerkini?->nomor ?? '-' }}
                         </span>
-                        <x-lencana :status="$penghuni->status === 'keluar' ? 'keluar' : $kuotaBulanIni['status']" />
+                        <x-lencana :status="$penghuni->status" />
+                        @if ($penghuni->status !== 'keluar')
+                            <x-lencana :status="$kuotaBulanIni['status']" />
+                        @endif
                         @if ($penghuni->tanggal_masuk_perkiraan)
                             <span class="inline-flex items-center rounded-full border border-line-strong bg-sunken px-2.5 py-0.5 text-xs text-muted">
                                 Tanggal masuk perkiraan
@@ -53,10 +56,22 @@
                             Masuk: <strong class="text-ink">{{ $penghuni->tanggal_masuk->format('d/m/Y') }}</strong>
                         </span>
 
+                        <span>
+                            <i class="fas fa-clock mr-1" aria-hidden="true"></i>
+                            Sewa: <strong class="text-ink">{{ $penghuni->labelJangkaWaktu() }}</strong>
+                        </span>
+
+                        @if ($penghuni->tanggal_keluar_rencana)
+                            <span>
+                                <i class="fas fa-calendar-day mr-1" aria-hidden="true"></i>
+                                Keluar Rencana: <strong class="text-ink">{{ $penghuni->tanggal_keluar_rencana->format('d/m/Y') }}</strong>
+                            </span>
+                        @endif
+
                         @if ($penghuni->status === 'keluar' && $penghuni->tanggal_keluar)
                             <span class="text-danger">
                                 <i class="fas fa-door-open mr-1" aria-hidden="true"></i>
-                                Keluar: <strong>{{ $penghuni->tanggal_keluar->format('d/m/Y') }}</strong>
+                                Selesai / Keluar: <strong>{{ $penghuni->tanggal_keluar->format('d/m/Y') }}</strong>
                                 @if ($penghuni->alasan_keluar)
                                     ({{ $penghuni->alasan_keluar }})
                                 @endif
@@ -109,7 +124,7 @@
                         </button>
                     @endif
 
-                    @if ($bolehKelolaKontrak && $penghuni->status === 'aktif')
+                    @if ($bolehKelolaKontrak && in_array($penghuni->status, ['aktif', 'booking'], true))
                         <button
                             type="button"
                             data-modal-open="modal-pindah-kamar"
@@ -333,22 +348,57 @@
     </div>
 
     @if ($bolehKelolaPenghuni)
-        <x-modal id="modal-ubah-data" judul="Ubah Data Penghuni">
+        <x-modal id="modal-ubah-data" judul="Ubah Data & Kontrak Penghuni" lebar="max-w-xl">
             <form
                 method="POST"
                 action="{{ route('penghuni.update', $penghuni) }}"
+                x-data="kontrakSewa({
+                    status: @js(old('status', $penghuni->status)),
+                    tanggalMasuk: @js(old('tanggal_masuk', $penghuni->tanggal_masuk->toDateString())),
+                    jangkaWaktu: @js(old('jangka_waktu_sewa', $penghuni->jangka_waktu_sewa ?? 'tidak_tentu')),
+                    tanggalKeluarRencana: @js(old('tanggal_keluar_rencana', $penghuni->tanggal_keluar_rencana?->toDateString() ?? '')),
+                    tanggalKeluar: @js(old('tanggal_keluar', $penghuni->tanggal_keluar?->toDateString() ?? now('Asia/Jakarta')->toDateString()))
+                })"
                 data-track-dirty
                 data-draft-key="ubah-penghuni-{{ $penghuni->id }}"
-                data-confirm-title="Simpan Perubahan Data?"
-                data-confirm-message="Perubahan nama, alias, atau catatan penghuni {{ $penghuni->nama }} akan disimpan dan dicatat ke audit log."
+                data-confirm-title="Simpan Perubahan Data & Kontrak?"
+                data-confirm-message="Perubahan data profil maupun status kontrak penghuni {{ $penghuni->nama }} akan disimpan dan dicatat ke audit log."
                 data-confirm-label="Ya, Simpan"
                 data-confirm-variant="maroon"
                 class="space-y-4"
             >
                 @csrf
                 @method('PUT')
-                <x-field label="Nama Lengkap" name="nama" id="ubah-nama" :value="$penghuni->nama" :required="true" />
-                <x-field label="Nama Panggilan / Alias" name="alias" id="ubah-alias" :value="$penghuni->alias ?? ''" />
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <x-field label="Nama Lengkap" name="nama" id="ubah-nama" :value="$penghuni->nama" :required="true" />
+                    <x-field label="Nama Panggilan / Alias" name="alias" id="ubah-alias" :value="$penghuni->alias ?? ''" />
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <x-field label="Status Kontrak" name="status" id="ubah-status" :required="true">
+                        <select
+                            id="ubah-status"
+                            name="status"
+                            x-model="status"
+                            class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20"
+                        >
+                            <option value="booking">Booking</option>
+                            <option value="aktif">Aktif</option>
+                            <option value="keluar">Selesai (Keluar)</option>
+                        </select>
+                    </x-field>
+
+                    <x-field
+                        label="Tanggal Masuk"
+                        name="tanggal_masuk"
+                        id="ubah-tanggal-masuk"
+                        type="date"
+                        x-model="tanggalMasuk"
+                        x-on:change="saatUbahTanggalMasuk"
+                        :value="old('tanggal_masuk', $penghuni->tanggal_masuk->toDateString())"
+                        :required="true"
+                    />
+                </div>
 
                 <label class="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-xl border border-line px-3.5 py-2 text-sm text-ink">
                     <input
@@ -360,6 +410,49 @@
                     >
                     <span>Tanggal masuk merupakan perkiraan</span>
                 </label>
+
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <x-field label="Jangka Waktu Sewa" name="jangka_waktu_sewa" id="ubah-jangka-waktu" :required="true">
+                        <select
+                            id="ubah-jangka-waktu"
+                            name="jangka_waktu_sewa"
+                            x-model="jangkaWaktu"
+                            x-on:change="saatUbahJangkaWaktu"
+                            class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20"
+                        >
+                            @foreach (\App\Models\Penghuni::DAFTAR_JANGKA_WAKTU as $kodeJangka => $labelJangka)
+                                <option value="{{ $kodeJangka }}">{{ $labelJangka }}</option>
+                            @endforeach
+                        </select>
+                    </x-field>
+
+                    <x-field
+                        label="Tgl Keluar Rencana"
+                        name="tanggal_keluar_rencana"
+                        id="ubah-keluar-rencana"
+                        type="date"
+                        x-model="tanggalKeluarRencana"
+                        hint="Auto terhitung untuk Bulanan–1 Tahun; boleh dikosongkan / custom jika Tidak Tentu."
+                    />
+                </div>
+
+                <div x-show="status === 'keluar'" x-cloak class="grid gap-3 rounded-xl border border-danger/25 bg-danger/5 p-3 sm:grid-cols-2">
+                    <x-field
+                        label="Tanggal Selesai / Keluar"
+                        name="tanggal_keluar"
+                        id="ubah-tanggal-keluar"
+                        type="date"
+                        x-model="tanggalKeluar"
+                        :value="old('tanggal_keluar', $penghuni->tanggal_keluar?->toDateString() ?? now('Asia/Jakarta')->toDateString())"
+                    />
+                    <x-field
+                        label="Alasan Keluar"
+                        name="alasan_keluar"
+                        id="ubah-alasan-keluar"
+                        :value="$penghuni->alasan_keluar ?? ''"
+                        placeholder="Opsional"
+                    />
+                </div>
 
                 <x-field label="Catatan" name="catatan" id="ubah-catatan" :value="$penghuni->catatan ?? ''" />
 
@@ -409,7 +502,7 @@
         </x-modal>
     @endif
 
-    @if ($bolehKelolaKontrak && $penghuni->status === 'aktif')
+    @if ($bolehKelolaKontrak && in_array($penghuni->status, ['aktif', 'booking'], true))
         <x-modal id="modal-pindah-kamar" judul="Pindah Kamar: {{ $penghuni->nama }}">
             <div class="mb-4 rounded-xl border border-gold/30 bg-gold-container px-4 py-3 text-xs text-on-gold sm:text-sm">
                 <p class="font-bold">Pratinjau Kuota (Tidak Di-reset)</p>

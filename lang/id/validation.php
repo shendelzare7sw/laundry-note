@@ -94,6 +94,8 @@ return [
         'kamar_tujuan_id' => 'kamar tujuan',
         'tanggal_masuk' => 'tanggal masuk',
         'tanggal_masuk_perkiraan' => 'tanggal masuk perkiraan',
+        'jangka_waktu_sewa' => 'jangka waktu sewa',
+        'tanggal_keluar_rencana' => 'tanggal keluar rencana',
         'tanggal_pindah' => 'tanggal pindah',
         'tanggal_keluar' => 'tanggal keluar',
         'alasan_keluar' => 'alasan keluar',

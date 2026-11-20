@@ -34,7 +34,11 @@ class PenghuniController extends Controller
         Gate::authorize('viewAny', [Penghuni::class, $propertiAktif]);
 
         $tabInput = $request->string('tab')->toString();
-        $tab = in_array($tabInput, ['aktif', 'keluar', 'semua'], true) ? $tabInput : 'aktif';
+        $tab = match ($tabInput) {
+            'semua', 'booking', 'aktif', 'keluar' => $tabInput,
+            'selesai' => 'keluar',
+            default => 'aktif',
+        };
         $cari = trim($request->string('cari')->toString());
         $bulanInput = $request->string('bulan')->toString();
         $rentangBulan = $this->kuotaService->rentangBulan(
@@ -47,6 +51,7 @@ class PenghuniController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status');
 
+        $jumlahBooking = (int) ($hitunganStatus->get('booking') ?? 0);
         $jumlahAktif = (int) ($hitunganStatus->get('aktif') ?? 0);
         $jumlahKeluar = (int) ($hitunganStatus->get('keluar') ?? 0);
 
@@ -66,15 +71,20 @@ class PenghuniController extends Controller
                         ->orWhereHas('penempatan.kamar', fn ($qKamar) => $qKamar->where('nomor', 'like', $pola));
                 });
             })
-            ->orderByRaw("CASE WHEN status = 'aktif' THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE WHEN status = 'aktif' THEN 0 WHEN status = 'booking' THEN 1 ELSE 2 END")
             ->orderBy('nama')
             ->get()
             ->sortBy(function (Penghuni $penghuni): string {
                 $kamarTerkini = $penghuni->penempatanAktif?->kamar
                     ?? $penghuni->penempatan->first()?->kamar;
                 $nomor = $kamarTerkini?->nomor ?? 'ZZZ';
+                $urutanStatus = match ($penghuni->status) {
+                    'aktif' => '0-',
+                    'booking' => '1-',
+                    default => '2-',
+                };
 
-                return ($penghuni->status === 'aktif' ? '0-' : '1-').str_pad($nomor, 6, '0', STR_PAD_LEFT).'-'.$penghuni->nama;
+                return $urutanStatus.str_pad($nomor, 6, '0', STR_PAD_LEFT).'-'.$penghuni->nama;
             })
             ->values();
 
@@ -103,9 +113,10 @@ class PenghuniController extends Controller
             'rentangBulan' => $rentangBulan,
             'tab' => $tab,
             'cari' => $cari,
+            'jumlahBooking' => $jumlahBooking,
             'jumlahAktif' => $jumlahAktif,
             'jumlahKeluar' => $jumlahKeluar,
-            'jumlahSemua' => $jumlahAktif + $jumlahKeluar,
+            'jumlahSemua' => $jumlahBooking + $jumlahAktif + $jumlahKeluar,
             'kamarKosong' => $kamarKosong,
             'bolehKelolaKontrak' => $bolehKelolaKontrak,
             'penjagaBolehKontrak' => $this->pengaturanService->penjagaBolehKelolaKontrak($propertiAktif),
@@ -173,7 +184,7 @@ class PenghuniController extends Controller
 
         $penempatanTerbaru = $penghuni->penempatan->first();
         $bisaBatalkanPindah = $bolehKelolaKontrak
-            && $penghuni->status === 'aktif'
+            && in_array($penghuni->status, ['aktif', 'booking'], true)
             && $penempatanTerbaru !== null
             && $penempatanTerbaru->selesai === null
             && $penempatanTerbaru->sebab === 'pindah'

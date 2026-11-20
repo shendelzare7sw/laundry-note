@@ -24,7 +24,7 @@ class AppLayout extends Component
         if ($propertiAktif instanceof Properti) {
             $penghuniAktif = Penghuni::query()
                 ->where('properti_id', $propertiAktif->id)
-                ->where('status', 'aktif')
+                ->whereIn('status', ['aktif', 'booking'])
                 ->with('penempatanAktif.kamar')
                 ->get();
 
