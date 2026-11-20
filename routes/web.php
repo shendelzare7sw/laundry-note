@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\LaundryController;
+use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\PenghuniController;
 use App\Http\Controllers\PropertiController;
@@ -50,6 +51,11 @@ Route::middleware(['auth', 'properti.aktif'])->group(function (): void {
 
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
     Route::get('/laporan/csv', [LaporanController::class, 'csv'])->name('laporan.csv');
+    Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengaturan.index');
+    Route::put('/pengaturan/aturan', [PengaturanController::class, 'simpanAturan'])->name('pengaturan.aturan');
+    Route::put('/pengaturan/izin-penjaga', [PengaturanController::class, 'simpanIzinPenjaga'])->name('pengaturan.izin-penjaga');
+    Route::put('/pengaturan/template-wa', [PengaturanController::class, 'simpanTemplateWa'])->name('pengaturan.template-wa');
+    Route::post('/pengaturan/template-wa/reset', [PengaturanController::class, 'resetTemplateWa'])->name('pengaturan.template-wa.reset');
     Route::view('/lainnya', 'lainnya.index')->name('lainnya.index');
 
     Route::get('/properti', [PropertiController::class, 'index'])->name('properti.index');
