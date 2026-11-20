@@ -49,6 +49,8 @@ class PropertiWizardService
                 );
             }
         });
+
+        app(PengaturanService::class)->bersihkanCache($properti);
     }
 
     /**
@@ -136,6 +138,8 @@ class PropertiWizardService
                 ],
             ]);
         });
+
+        app(PengaturanService::class)->bersihkanCache($properti);
     }
 
     /**

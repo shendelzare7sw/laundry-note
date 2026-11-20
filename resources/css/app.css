@@ -71,3 +71,38 @@ dialog::backdrop {
 .bottom-nav-safe {
     padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
 }
+
+progress.kuota-progress {
+    appearance: none;
+    border: 0 solid;
+    overflow: clip;
+    background-color: var(--color-sunken);
+}
+
+progress.kuota-progress::-webkit-progress-bar {
+    background-color: var(--color-sunken);
+    border-radius: 9999px;
+}
+
+progress.kuota-progress::-webkit-progress-value {
+    background-color: var(--kuota-fill, var(--color-ok));
+    border-radius: 9999px;
+    transition: width 0.25s ease;
+}
+
+progress.kuota-progress::-moz-progress-bar {
+    background-color: var(--kuota-fill, var(--color-ok));
+    border-radius: 9999px;
+}
+
+.kuota-normal {
+    --kuota-fill: var(--color-ok);
+}
+
+.kuota-mendekati {
+    --kuota-fill: var(--color-warn);
+}
+
+.kuota-lewat {
+    --kuota-fill: var(--color-danger);
+}

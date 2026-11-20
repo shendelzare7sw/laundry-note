@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\PenghuniController;
 use App\Http\Controllers\PropertiController;
 use App\Http\Controllers\PropertiWizardController;
 use Illuminate\Support\Facades\Route;
@@ -20,7 +21,18 @@ Route::middleware(['auth', 'properti.aktif'])->group(function (): void {
     Route::get('/', [BerandaController::class, 'index'])->name('beranda');
 
     Route::view('/laundry', 'laundry.index')->name('laundry.index');
-    Route::view('/penghuni', 'penghuni.index')->name('penghuni.index');
+
+    Route::get('/penghuni', [PenghuniController::class, 'index'])->name('penghuni.index');
+    Route::post('/penghuni', [PenghuniController::class, 'store'])->name('penghuni.store');
+    Route::get('/penghuni/{penghuni}', [PenghuniController::class, 'show'])->name('penghuni.show');
+    Route::put('/penghuni/{penghuni}', [PenghuniController::class, 'update'])->name('penghuni.update');
+    Route::post('/penghuni/{penghuni}/pindah-kamar', [PenghuniController::class, 'pindahKamar'])->name('penghuni.pindah-kamar');
+    Route::post('/penghuni/{penghuni}/batalkan-pindah', [PenghuniController::class, 'batalkanPindah'])->name('penghuni.batalkan-pindah');
+    Route::post('/penghuni/{penghuni}/keluar', [PenghuniController::class, 'keluar'])->name('penghuni.keluar');
+    Route::post('/penghuni/{penghuni}/batalkan-keluar', [PenghuniController::class, 'batalkanKeluar'])->name('penghuni.batalkan-keluar');
+    Route::post('/penghuni/{penghuni}/ganti-nomor', [PenghuniController::class, 'gantiNomor'])->name('penghuni.ganti-nomor');
+    Route::post('/penghuni/{penghuni}/penyesuaian-kuota', [PenghuniController::class, 'simpanPenyesuaianKuota'])->name('penghuni.penyesuaian-kuota');
+
     Route::view('/laporan', 'laporan.index')->name('laporan.index');
     Route::view('/lainnya', 'lainnya.index')->name('lainnya.index');
 
