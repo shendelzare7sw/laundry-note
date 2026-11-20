@@ -132,6 +132,19 @@
                             </li>
                         @endcan
 
+                        @if ($sudahPilihProperti && $penggunaSaatIni->can('manage', [\App\Models\Pengaturan::class, $propertiAktif]))
+                            <li>
+                                <a
+                                    href="{{ route('pengaturan.index') }}"
+                                    @if (request()->routeIs('pengaturan.*')) aria-current="page" @endif
+                                    class="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors {{ request()->routeIs('pengaturan.*') ? 'bg-white/15 font-bold text-white' : 'text-white/75 hover:bg-white/10 hover:text-white' }}"
+                                >
+                                    <i class="fas fa-gear w-5 text-center {{ request()->routeIs('pengaturan.*') ? 'text-gold-soft' : 'text-white/55' }}" aria-hidden="true"></i>
+                                    <span>Pengaturan</span>
+                                </a>
+                            </li>
+                        @endif
+
                         <li>
                             <a
                                 href="{{ route('lainnya.index') }}"

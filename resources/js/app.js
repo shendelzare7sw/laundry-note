@@ -547,6 +547,51 @@ document.addEventListener('alpine:init', () => {
             return new Intl.NumberFormat('id-ID').format(Number(n || 0));
         },
     }));
+
+    Alpine.data('editorTemplateWa', (awal = {}) => ({
+        aktif: 'tagihan',
+        tagihan: String(awal.tagihan ?? ''),
+        peringatan: String(awal.peringatan ?? ''),
+        rekap: String(awal.rekap ?? ''),
+        gedung: String(awal.gedung ?? "D'bata Residence"),
+        sisipkan(variabel) {
+            const el = document.getElementById(`wa-${this.aktif}`);
+            if (!el) {
+                this[this.aktif] = `${this[this.aktif]}${variabel}`;
+                return;
+            }
+            const start = el.selectionStart ?? this[this.aktif].length;
+            const end = el.selectionEnd ?? start;
+            const teks = this[this.aktif];
+            this[this.aktif] = teks.slice(0, start) + variabel + teks.slice(end);
+            this.$nextTick(() => {
+                el.focus();
+                const pos = start + variabel.length;
+                el.setSelectionRange(pos, pos);
+            });
+        },
+        pratinjau(kode) {
+            const contoh = {
+                '{nama}': 'Glenn',
+                '{kamar}': '302',
+                '{gedung}': this.gedung,
+                '{periode}': '1 Nov 2026 - 30 Nov 2026',
+                '{rincian}': '• 10 Nov 2026: 2,8 kg - Rp22.400\n• 10 Nov 2026 (Selimut): 1 item - Rp15.000',
+                '{kuota_terpakai}': '23,7',
+                '{kuota}': '20,0',
+                '{sisa}': '0,0',
+                '{lewat_kg}': '3,7',
+                '{tagihan_lewat}': 'Tagihan lewat kuota 3,7 kg: Rp24.000\nBayar terpisah (1 item): Rp15.000',
+                '{terpisah}': 'Rp15.000',
+                '{total}': 'Rp39.000',
+            };
+            let hasil = String(this[kode] ?? '');
+            for (const [k, v] of Object.entries(contoh)) {
+                hasil = hasil.split(k).join(v);
+            }
+            return hasil.replace(/\{[a-z0-9_]+\}/gi, '').replace(/\n{3,}/g, '\n\n').trim();
+        },
+    }));
 });
 
 document.addEventListener('click', (event) => {
