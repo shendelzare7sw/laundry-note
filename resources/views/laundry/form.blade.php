@@ -124,57 +124,138 @@
                             :required="true"
                         />
 
-                        {{-- Pilih Penghuni (Aktif saat jenis === 'penghuni') --}}
-                        <div class="space-y-1.5" data-field-wrapper data-field-label="Penghuni" data-field-name="penghuni_id" x-show="jenis === 'penghuni'">
-                            <label for="laundry-penghuni" class="block text-sm font-medium text-ink">
+                        {{-- Pilih Penghuni (1 Combobox: bisa ketik kamar/nama sekaligus dropdown) --}}
+                        <div
+                            class="space-y-1.5"
+                            data-field-wrapper
+                            data-field-label="Penghuni"
+                            data-field-name="penghuni_id"
+                            x-show="jenis === 'penghuni'"
+                            x-on:click.outside="tutupCombobox"
+                        >
+                            <label for="laundry-penghuni-input" class="block text-sm font-medium text-ink">
                                 Penghuni <span class="text-danger" aria-hidden="true">*</span>
                             </label>
 
                             <input
-                                id="cari-penghuni"
-                                type="search"
-                                x-model="cariPenghuni"
-                                placeholder="Saring kamar atau nama..."
-                                autocorrect="off"
-                                spellcheck="false"
+                                type="hidden"
+                                name="penghuni_id"
+                                :value="penghuniId"
                                 :disabled="jenis !== 'penghuni'"
-                                class="block min-h-10 w-full rounded-xl border border-line bg-alt px-3 text-sm text-ink placeholder:text-subtle focus:border-maroon focus:bg-surface focus:outline-none"
                             >
 
-                            <select
-                                id="laundry-penghuni"
-                                name="penghuni_id"
-                                x-model="penghuniId"
-                                x-on:change="saatUbahPenghuni"
-                                :disabled="jenis !== 'penghuni'"
-                                :required="jenis === 'penghuni'"
-                                aria-invalid="{{ $errors->has('penghuni_id') ? 'true' : 'false' }}"
-                                class="block min-h-12 w-full rounded-xl border bg-surface px-3.5 text-base text-ink focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20 sm:text-sm {{ $errors->has('penghuni_id') ? 'border-danger' : 'border-line-strong' }}"
-                            >
-                                <option value="">-- Pilih penghuni --</option>
-                                <template x-for="calon in penghuniTersaring" :key="calon.id">
-                                    <option :value="String(calon.id)" :selected="String(calon.id) === String(penghuniId)" x-text="calon.label"></option>
-                                </template>
-                            </select>
+                            <div class="relative">
+                                <input
+                                    id="laundry-penghuni-input"
+                                    type="text"
+                                    role="combobox"
+                                    autocomplete="off"
+                                    autocorrect="off"
+                                    spellcheck="false"
+                                    aria-autocomplete="list"
+                                    aria-controls="listbox-penghuni"
+                                    :aria-expanded="comboboxTerbuka ? 'true' : 'false'"
+                                    :aria-activedescendant="indeksSorot >= 0 ? 'opsi-penghuni-' + indeksSorot : null"
+                                    :aria-invalid="duplikatCatatan ? 'true' : '{{ $errors->has('penghuni_id') ? 'true' : 'false' }}'"
+                                    x-model="teksCombobox"
+                                    x-on:focus="bukaCombobox"
+                                    x-on:click="bukaCombobox"
+                                    x-on:input="saatKetikCombobox"
+                                    x-on:keydown.arrow-down.prevent="sorotBerikut"
+                                    x-on:keydown.arrow-up.prevent="sorotSebelum"
+                                    x-on:keydown.enter.prevent="pilihYangDisorot"
+                                    x-on:keydown.escape.prevent="tutupCombobox"
+                                    :disabled="jenis !== 'penghuni'"
+                                    :required="jenis === 'penghuni'"
+                                    placeholder="Ketik nomor kamar atau nama, atau klik untuk memilih..."
+                                    class="block min-h-12 w-full rounded-xl border bg-surface pl-3.5 pr-16 text-base text-ink placeholder:text-subtle focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20 sm:text-sm {{ $errors->has('penghuni_id') ? 'border-danger' : 'border-line-strong' }}"
+                                >
+
+                                <div class="absolute inset-y-0 right-1 flex items-center gap-0.5">
+                                    <button
+                                        type="button"
+                                        x-show="teksCombobox !== '' || penghuniId !== ''"
+                                        x-cloak
+                                        x-on:click="bersihkanPenghuni"
+                                        aria-label="Hapus pilihan penghuni"
+                                        class="flex h-9 w-8 items-center justify-center rounded-lg text-muted hover:bg-sunken hover:text-ink"
+                                    >
+                                        <i class="fas fa-xmark text-xs" aria-hidden="true"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        x-on:click="toggleCombobox"
+                                        aria-label="Tampilkan daftar penghuni"
+                                        class="flex h-9 w-8 items-center justify-center rounded-lg text-muted hover:bg-sunken hover:text-ink"
+                                    >
+                                        <i class="fas fa-chevron-down text-xs transition-transform" :class="comboboxTerbuka ? 'rotate-180' : ''" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+
+                                <ul
+                                    id="listbox-penghuni"
+                                    role="listbox"
+                                    x-show="comboboxTerbuka"
+                                    x-cloak
+                                    class="absolute z-40 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-line-strong bg-surface p-1 shadow-xl"
+                                >
+                                    <template x-if="penghuniTersaring.length === 0">
+                                        <li class="px-3 py-2.5 text-xs text-muted">
+                                            Penghuni atau kamar tidak ditemukan.
+                                        </li>
+                                    </template>
+
+                                    <template x-for="(calon, idx) in penghuniTersaring" :key="calon.id">
+                                        <li
+                                            :id="'opsi-penghuni-' + idx"
+                                            role="option"
+                                            :aria-selected="String(calon.id) === String(penghuniId) ? 'true' : 'false'"
+                                            x-on:mousedown.prevent="pilihPenghuni(calon)"
+                                            x-on:mouseenter="indeksSorot = idx"
+                                            class="flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm transition-colors"
+                                            :class="indeksSorot === idx ? 'bg-maroon/10 text-maroon font-bold' : (String(calon.id) === String(penghuniId) ? 'bg-sunken font-bold text-ink' : 'text-ink hover:bg-sunken')"
+                                        >
+                                            <span class="truncate" x-text="calon.label"></span>
+                                            <i
+                                                class="fas fa-check shrink-0 text-xs text-maroon"
+                                                x-show="String(calon.id) === String(penghuniId)"
+                                                aria-hidden="true"
+                                            ></i>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
 
                             <p id="laundry-penghuni-error" data-field-error="penghuni_id" class="text-xs font-medium text-danger {{ $errors->has('penghuni_id') ? '' : 'hidden' }}">{{ $errors->first('penghuni_id') }}</p>
                         </div>
                     </div>
 
-                    {{-- Panel Info Kuota Live (selalu ada di DOM sebagai ARIA live region) --}}
+                    {{-- Panel Info Kuota Live & Peringatan Duplikat Tanggal (ARIA live region) --}}
                     <div
                         role="status"
                         aria-live="polite"
                         class="rounded-xl border px-3.5 py-2.5 text-xs font-medium sm:text-sm"
-                        :class="galatTanggal || infoKuota?.status === 'lewat' ? 'border-danger/35 bg-danger/10 text-danger' : (infoKuota?.status === 'mendekati' ? 'border-gold/40 bg-gold-container text-on-gold' : 'border-line bg-alt text-muted')"
+                        :class="galatTanggal || duplikatCatatan || infoKuota?.status === 'lewat' ? 'border-danger/35 bg-danger/10 text-danger' : (infoKuota?.status === 'mendekati' ? 'border-gold/40 bg-gold-container text-on-gold' : 'border-line bg-alt text-muted')"
                     >
-                        <div class="flex items-start gap-2">
-                            <i
-                                class="fas mt-0.5 shrink-0"
-                                :class="galatTanggal || infoKuota?.status === 'lewat' ? 'fa-triangle-exclamation' : 'fa-circle-info'"
-                                aria-hidden="true"
-                            ></i>
-                            <span x-text="teksBantuKuota">Memuat informasi kuota...</span>
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-start gap-2">
+                                <i
+                                    class="fas mt-0.5 shrink-0"
+                                    :class="galatTanggal || duplikatCatatan || infoKuota?.status === 'lewat' ? 'fa-triangle-exclamation' : 'fa-circle-info'"
+                                    aria-hidden="true"
+                                ></i>
+                                <span x-text="teksBantuKuota">Memuat informasi kuota...</span>
+                            </div>
+
+                            <a
+                                x-show="duplikatCatatan"
+                                x-cloak
+                                :href="duplikatCatatan?.url_ubah"
+                                class="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-danger px-3 text-xs font-bold text-white hover:bg-danger/90"
+                            >
+                                <i class="fas fa-pen text-[11px]" aria-hidden="true"></i>
+                                <span>Ubah Catatan Ini</span>
+                            </a>
                         </div>
                     </div>
 

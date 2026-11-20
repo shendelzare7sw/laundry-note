@@ -264,6 +264,56 @@ class LaundryServiceTest extends TestCase
         $this->assertTrue($policy->update($this->admin, $milikPenjaga->fresh()));
     }
 
+    public function test_satu_penghuni_hanya_satu_catatan_per_tanggal_dan_pratinjau_mengembalikan_duplikat(): void
+    {
+        $penghuni = $this->masuk('Travis', $this->kamar307, '2026-11-01');
+
+        $pertama = $this->laundry->catat($this->properti, [
+            'jenis' => 'penghuni',
+            'tanggal' => '2026-11-10',
+            'penghuni_id' => $penghuni->id,
+            'berat_kg' => '3.4',
+        ], $this->admin);
+
+        // Pratinjau untuk penghuni + tanggal sama mengembalikan info duplikat & galat
+        $pratinjau = $this->laundry->pratinjau($this->properti, '2026-11-10', $penghuni, '2');
+        $this->assertNotNull($pratinjau['duplikat']);
+        $this->assertSame($pertama->id, $pratinjau['duplikat']['id']);
+        $this->assertNotNull($pratinjau['galat']);
+
+        // Pratinjau dengan kecualiId = catatan itu sendiri (mode edit) tidak dianggap duplikat
+        $pratinjauEdit = $this->laundry->pratinjau($this->properti, '2026-11-10', $penghuni, '3.4', $pertama);
+        $this->assertNull($pratinjauEdit['duplikat']);
+        $this->assertNull($pratinjauEdit['galat']);
+
+        // Catat baru pada tanggal sama ditolak
+        try {
+            $this->laundry->catat($this->properti, [
+                'jenis' => 'penghuni',
+                'tanggal' => '2026-11-10',
+                'penghuni_id' => $penghuni->id,
+                'berat_kg' => '2',
+            ], $this->admin);
+            $this->fail('Seharusnya menolak duplikat penghuni dan tanggal yang sama.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('tanggal', $e->errors());
+        }
+
+        // Tetapkan pemilik dari "tanpa_nama" di tanggal sama juga ditolak
+        $tanpaNama = $this->laundry->catat($this->properti, [
+            'jenis' => 'tanpa_nama',
+            'tanggal' => '2026-11-10',
+            'berat_kg' => '2',
+        ], $this->admin);
+
+        try {
+            $this->laundry->tetapkanPemilik($tanpaNama, $penghuni, $this->admin);
+            $this->fail('Seharusnya menolak penetapan pemilik jika penghuni sudah punya catatan di tanggal itu.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('tanggal', $e->errors());
+        }
+    }
+
     private function masuk(string $nama, Kamar $kamar, string $tanggal, string $status = 'aktif'): Penghuni
     {
         return app(PenempatanService::class)->masuk($this->properti, [

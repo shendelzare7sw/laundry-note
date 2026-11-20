@@ -170,7 +170,10 @@ document.addEventListener('alpine:init', () => {
         jenis: awal.jenis ?? 'penghuni',
         tanggal: awal.tanggal ?? '',
         penghuniId: awal.penghuniId ? String(awal.penghuniId) : '',
-        cariPenghuni: '',
+        teksCombobox: '',
+        sedangMengetikCombobox: false,
+        comboboxTerbuka: false,
+        indeksSorot: -1,
         daftarPenghuni: Array.isArray(awal.daftarPenghuni) ? awal.daftarPenghuni : [],
         beratKg: awal.beratKg ?? '',
         biayaUtama: awal.biayaUtama ?? '',
@@ -185,6 +188,7 @@ document.addEventListener('alpine:init', () => {
         infoKuota: null,
         kamarTerdeteksi: awal.kamarAwal ?? null,
         galatTanggal: null,
+        duplikatCatatan: null,
         memuatInfo: false,
         endpointInfo: awal.endpointInfo ?? '',
         kecualiId: awal.kecualiId ?? null,
@@ -193,9 +197,100 @@ document.addEventListener('alpine:init', () => {
         init() {
             const awalItem = Array.isArray(awal.item) ? awal.item : [];
             this.item = awalItem.map((baris) => this.buatBarisItem(baris));
+            this.sinkronTeksCombobox();
             this.hitungUlangOtomatis(false);
             if (this.endpointInfo) {
                 this.muatInfoKuota(false);
+            }
+        },
+        sinkronTeksCombobox() {
+            const terpilih = this.daftarPenghuni.find((p) => String(p.id) === String(this.penghuniId));
+            this.teksCombobox = terpilih ? String(terpilih.label ?? '') : '';
+            this.sedangMengetikCombobox = false;
+        },
+        bukaCombobox() {
+            this.comboboxTerbuka = true;
+            this.indeksSorot = this.penghuniTersaring.findIndex((p) => String(p.id) === String(this.penghuniId));
+        },
+        toggleCombobox() {
+            if (this.comboboxTerbuka) {
+                this.tutupCombobox();
+            } else {
+                this.sedangMengetikCombobox = false;
+                this.bukaCombobox();
+                this.$el.querySelector('#laundry-penghuni-input')?.focus();
+            }
+        },
+        tutupCombobox() {
+            this.comboboxTerbuka = false;
+            this.indeksSorot = -1;
+            if (this.penghuniId) {
+                this.sinkronTeksCombobox();
+            } else if (!this.sedangMengetikCombobox) {
+                this.teksCombobox = '';
+            }
+        },
+        saatKetikCombobox() {
+            this.sedangMengetikCombobox = true;
+            this.comboboxTerbuka = true;
+            this.indeksSorot = 0;
+            const cocokPersis = this.daftarPenghuni.find(
+                (p) => String(p.label ?? '').toLowerCase() === this.teksCombobox.trim().toLowerCase()
+            );
+            if (cocokPersis) {
+                this.penghuniId = String(cocokPersis.id);
+            } else if (this.penghuniId !== '') {
+                this.penghuniId = '';
+                this.infoKuota = null;
+                this.galatTanggal = null;
+                this.duplikatCatatan = null;
+            }
+        },
+        pilihPenghuni(calon) {
+            this.penghuniId = String(calon.id);
+            this.teksCombobox = String(calon.label ?? '');
+            this.sedangMengetikCombobox = false;
+            this.comboboxTerbuka = false;
+            this.indeksSorot = -1;
+            this.saatUbahPenghuni();
+        },
+        bersihkanPenghuni() {
+            this.penghuniId = '';
+            this.teksCombobox = '';
+            this.sedangMengetikCombobox = false;
+            this.infoKuota = null;
+            this.galatTanggal = null;
+            this.duplikatCatatan = null;
+            this.bukaCombobox();
+            this.$el.querySelector('#laundry-penghuni-input')?.focus();
+        },
+        sorotBerikut() {
+            if (!this.comboboxTerbuka) {
+                this.bukaCombobox();
+                return;
+            }
+            const total = this.penghuniTersaring.length;
+            if (total === 0) {
+                return;
+            }
+            this.indeksSorot = (this.indeksSorot + 1) % total;
+        },
+        sorotSebelum() {
+            if (!this.comboboxTerbuka) {
+                this.bukaCombobox();
+                return;
+            }
+            const total = this.penghuniTersaring.length;
+            if (total === 0) {
+                return;
+            }
+            this.indeksSorot = this.indeksSorot <= 0 ? total - 1 : this.indeksSorot - 1;
+        },
+        pilihYangDisorot() {
+            const daftar = this.penghuniTersaring;
+            if (this.comboboxTerbuka && daftar.length > 0) {
+                const idx = this.indeksSorot >= 0 && this.indeksSorot < daftar.length ? this.indeksSorot : 0;
+                this.pilihPenghuni(daftar[idx]);
             }
         },
         buatBarisItem(baris = {}) {
@@ -250,7 +345,9 @@ document.addEventListener('alpine:init', () => {
         saatUbahJenis() {
             if (this.jenis !== 'penghuni') {
                 this.galatTanggal = null;
+                this.duplikatCatatan = null;
                 this.infoKuota = null;
+                this.comboboxTerbuka = false;
             } else {
                 this.muatInfoKuota(false);
             }
@@ -315,8 +412,12 @@ document.addEventListener('alpine:init', () => {
                 this.kamarTerdeteksi = data.kamar ?? null;
                 this.infoKuota = data.kuota ?? null;
                 this.galatTanggal = data.galat ?? null;
+                this.duplikatCatatan = data.duplikat ?? null;
                 if (perbaruiPenghuni && Array.isArray(data.daftar_penghuni)) {
                     this.daftarPenghuni = data.daftar_penghuni;
+                    if (this.penghuniId && !this.sedangMengetikCombobox) {
+                        this.sinkronTeksCombobox();
+                    }
                 }
             } catch (err) {
                 if (err?.name !== 'AbortError') {
@@ -354,6 +455,7 @@ document.addEventListener('alpine:init', () => {
             }
             if ('penghuni_id' in data) {
                 this.penghuniId = data.penghuni_id ? String(data.penghuni_id) : '';
+                this.sinkronTeksCombobox();
             }
             if ('berat_kg' in data) {
                 this.beratKg = String(data.berat_kg ?? '');
@@ -389,13 +491,14 @@ document.addEventListener('alpine:init', () => {
             }
         },
         get penghuniTersaring() {
-            const kata = this.cariPenghuni.trim().toLowerCase();
+            if (!this.sedangMengetikCombobox) {
+                return this.daftarPenghuni;
+            }
+            const kata = this.teksCombobox.trim().toLowerCase();
             if (kata === '') {
                 return this.daftarPenghuni;
             }
-            return this.daftarPenghuni.filter(
-                (p) => String(p.id) === this.penghuniId || String(p.label ?? '').toLowerCase().includes(kata)
-            );
+            return this.daftarPenghuni.filter((p) => String(p.label ?? '').toLowerCase().includes(kata));
         },
         get butuhKonfirmasiBerat() {
             return this.keCentiKg(this.beratKg) > 3000;

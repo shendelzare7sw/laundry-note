@@ -88,7 +88,7 @@ class LaundryService
             $properti = Properti::query()->findOrFail($terkunci->properti_id);
             $sebelum = $this->potret($terkunci);
 
-            $terkunci->fill($this->susunAtribut($properti, $data))->save();
+            $terkunci->fill($this->susunAtribut($properti, $data, $terkunci->id))->save();
             $this->sinkronItem($terkunci, $data['item'] ?? []);
 
             $this->auditService->catat(
@@ -126,6 +126,17 @@ class LaundryService
         return DB::transaction(function () use ($laundry, $aktor): Laundry {
             /** @var Laundry $terkunci */
             $terkunci = Laundry::query()->onlyTrashed()->lockForUpdate()->findOrFail($laundry->id);
+
+            if ($terkunci->jenis === 'penghuni' && $terkunci->penghuni_id !== null) {
+                $this->pastikanTidakDuplikatTanggal(
+                    $terkunci->properti_id,
+                    $terkunci->penghuni_id,
+                    $terkunci->tanggal->toDateString(),
+                    $terkunci->id,
+                    $terkunci->penghuni?->nama ?? 'Penghuni',
+                );
+            }
+
             $terkunci->restore();
 
             $this->auditService->catat(
@@ -156,6 +167,13 @@ class LaundryService
             }
 
             $penempatan = $this->pastikanPenempatan($terkunci->properti_id, $penghuni->id, $terkunci->tanggal->toDateString());
+            $this->pastikanTidakDuplikatTanggal(
+                $terkunci->properti_id,
+                $penghuni->id,
+                $terkunci->tanggal->toDateString(),
+                $terkunci->id,
+                $penghuni->nama,
+            );
             $sebelum = $this->potret($terkunci);
 
             $terkunci->fill([
@@ -266,6 +284,7 @@ class LaundryService
             'kamar' => null,
             'kuota' => null,
             'galat' => null,
+            'duplikat' => null,
         ];
 
         if ($penghuni === null) {
@@ -281,6 +300,17 @@ class LaundryService
         }
 
         $hasil['kamar'] = $penempatan->kamar?->nomor;
+
+        $duplikat = $this->cariDuplikatTanggal($properti->id, $penghuni->id, $tanggal, $kecuali?->id);
+
+        if ($duplikat !== null) {
+            $tglTampil = CarbonImmutable::parse($tanggal, 'Asia/Jakarta')->format('d/m/Y');
+            $hasil['duplikat'] = [
+                'id' => $duplikat->id,
+                'url_ubah' => route('laundry.edit', $duplikat),
+            ];
+            $hasil['galat'] = "{$penghuni->nama} sudah memiliki catatan laundry pada {$tglTampil}. Satu penghuni hanya 1 catatan per tanggal; silakan ubah catatan yang sudah ada.";
+        }
 
         $bulan = CarbonImmutable::parse($tanggal, 'Asia/Jakarta')->format('Y-m');
         $status = $this->kuotaService->statusBulan($penghuni, $bulan);
@@ -342,7 +372,7 @@ class LaundryService
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function susunAtribut(Properti $properti, array $data): array
+    private function susunAtribut(Properti $properti, array $data, ?int $kecualiId = null): array
     {
         $jenis = (string) ($data['jenis'] ?? 'penghuni');
         $tanggal = CarbonImmutable::parse((string) $data['tanggal'], 'Asia/Jakarta')->toDateString();
@@ -376,6 +406,7 @@ class LaundryService
             }
 
             $kamarId = $this->pastikanPenempatan($properti->id, $penghuni->id, $tanggal)->kamar_id;
+            $this->pastikanTidakDuplikatTanggal($properti->id, $penghuni->id, $tanggal, $kecualiId, $penghuni->nama);
         }
 
         $biayaUtama = null;
@@ -420,6 +451,35 @@ class LaundryService
         }
 
         return $penempatan;
+    }
+
+    private function cariDuplikatTanggal(int $propertiId, int $penghuniId, string $tanggal, ?int $kecualiId = null): ?Laundry
+    {
+        return Laundry::query()
+            ->where('properti_id', $propertiId)
+            ->where('jenis', 'penghuni')
+            ->where('penghuni_id', $penghuniId)
+            ->whereDate('tanggal', $tanggal)
+            ->when($kecualiId !== null, fn ($q) => $q->where('id', '!=', $kecualiId))
+            ->first();
+    }
+
+    private function pastikanTidakDuplikatTanggal(
+        int $propertiId,
+        int $penghuniId,
+        string $tanggal,
+        ?int $kecualiId,
+        string $namaPenghuni
+    ): void {
+        if ($this->cariDuplikatTanggal($propertiId, $penghuniId, $tanggal, $kecualiId) === null) {
+            return;
+        }
+
+        $tglTampil = CarbonImmutable::parse($tanggal, 'Asia/Jakarta')->format('d/m/Y');
+
+        throw ValidationException::withMessages([
+            'tanggal' => "{$namaPenghuni} sudah memiliki catatan laundry pada {$tglTampil}. Satu penghuni hanya boleh memiliki 1 catatan per tanggal; silakan ubah catatan yang sudah ada.",
+        ]);
     }
 
     /**

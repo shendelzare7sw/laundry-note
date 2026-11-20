@@ -215,7 +215,7 @@ class LaporanService
         $kartuLainnya = collect();
 
         if ($penghuniId === null) {
-            foreach (['pemilik_kos' => 'Laundry Pemilik Kos', 'tanpa_pemilik' => 'Belum Ada Pemilik'] as $jenisLain => $judulLain) {
+            foreach (['gedung' => 'GDG - Laundry Gedung', 'tanpa_nama' => 'Tanpa Nama'] as $jenisLain => $judulLain) {
                 $daftarLain = $catatan->where('jenis', $jenisLain);
 
                 if ($daftarLain->isEmpty()) {
