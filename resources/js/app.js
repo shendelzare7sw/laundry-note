@@ -61,20 +61,39 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    Alpine.data('toastBar', (initialTipe = 'ok', initialPesan = '') => ({
+    Alpine.data('toastBar', (initialTipe = 'ok', initialPesan = '', initialAksiUrl = '', initialAksiLabel = '') => ({
         tampil: Boolean(initialPesan),
         tipe: initialTipe,
         pesan: initialPesan,
+        aksiUrl: initialAksiUrl,
+        aksiLabel: initialAksiLabel,
         timer: null,
         init() {
             if (this.tampil) {
+                this.umumkan();
                 this.jadwalkanTutup();
             }
         },
         mulai(detail) {
             this.tipe = detail?.tipe ?? 'ok';
             this.pesan = detail?.pesan ?? '';
+            this.aksiUrl = detail?.aksi_url ?? '';
+            this.aksiLabel = detail?.aksi_label ?? '';
             this.tampil = Boolean(this.pesan);
+            if (this.tampil) {
+                this.umumkan();
+                this.jadwalkanTutup();
+            }
+        },
+        umumkan() {
+            if (typeof document.ariaNotify === 'function' && this.pesan) {
+                document.ariaNotify(this.pesan + (this.aksiUrl ? '. Aksi tersedia.' : ''));
+            }
+        },
+        jeda() {
+            clearTimeout(this.timer);
+        },
+        lanjutkan() {
             if (this.tampil) {
                 this.jadwalkanTutup();
             }
@@ -85,9 +104,10 @@ document.addEventListener('alpine:init', () => {
         },
         jadwalkanTutup() {
             clearTimeout(this.timer);
+            const durasi = this.aksiUrl ? 8000 : 5000;
             this.timer = setTimeout(() => {
                 this.tampil = false;
-            }, 5000);
+            }, durasi);
         },
     }));
 
@@ -145,6 +165,285 @@ document.addEventListener('alpine:init', () => {
             this.tanggalKeluarRencana = `${targetTahun}-${mm}-${dd}`;
         },
     }));
+
+    Alpine.data('formLaundry', (awal = {}) => ({
+        jenis: awal.jenis ?? 'penghuni',
+        tanggal: awal.tanggal ?? '',
+        penghuniId: awal.penghuniId ? String(awal.penghuniId) : '',
+        cariPenghuni: '',
+        daftarPenghuni: Array.isArray(awal.daftarPenghuni) ? awal.daftarPenghuni : [],
+        beratKg: awal.beratKg ?? '',
+        biayaUtama: awal.biayaUtama ?? '',
+        biayaManual: Boolean(awal.biayaManual),
+        biayaOtomatis: awal.biayaOtomatis ?? null,
+        tarifPerKg: Number(awal.tarifPerKg ?? 8000),
+        minKgCenti: Number(awal.minKgCenti ?? 200),
+        konfirmasiBeratBesar: Boolean(awal.konfirmasiBeratBesar),
+        maksItem: Number(awal.maksItem ?? 10),
+        nextKey: 1,
+        item: [],
+        infoKuota: null,
+        kamarTerdeteksi: awal.kamarAwal ?? null,
+        galatTanggal: null,
+        memuatInfo: false,
+        endpointInfo: awal.endpointInfo ?? '',
+        kecualiId: awal.kecualiId ?? null,
+        debounceTimer: null,
+        abortCtrl: null,
+        init() {
+            const awalItem = Array.isArray(awal.item) ? awal.item : [];
+            this.item = awalItem.map((baris) => this.buatBarisItem(baris));
+            this.hitungUlangOtomatis(false);
+            if (this.endpointInfo) {
+                this.muatInfoKuota(false);
+            }
+        },
+        buatBarisItem(baris = {}) {
+            return {
+                _key: this.nextKey++,
+                nama: String(baris.nama ?? ''),
+                jumlah: Number(baris.jumlah ?? 1) || 1,
+                berat_kg: String(baris.berat_kg ?? ''),
+                biaya: baris.biaya !== undefined && baris.biaya !== null ? String(baris.biaya) : '',
+            };
+        },
+        keCentiKg(str) {
+            if (str === null || str === undefined) {
+                return 0;
+            }
+            const bersih = String(str).replace(',', '.').trim();
+            const match = bersih.match(/^(\d+)(?:\.(\d+))?$/);
+            if (!match) {
+                return 0;
+            }
+            const bulat = Number(match[1]);
+            const pecahan = (match[2] ?? '').padEnd(3, '0');
+            let centi = bulat * 100 + Number(pecahan.slice(0, 2));
+            if (Number(pecahan[2]) >= 5) {
+                centi += 1;
+            }
+            return centi;
+        },
+        hitungBiayaOtomatisNilai(beratCenti) {
+            if (beratCenti <= 0) {
+                return null;
+            }
+            const beratDihitung = Math.max(beratCenti, this.minKgCenti);
+            return Math.floor((beratDihitung * this.tarifPerKg + 50) / 100);
+        },
+        hitungUlangOtomatis(isiBiaya = true) {
+            const beratCenti = this.keCentiKg(this.beratKg);
+            this.biayaOtomatis = this.hitungBiayaOtomatisNilai(beratCenti);
+            if (!isiBiaya) {
+                return;
+            }
+            if (beratCenti <= 0) {
+                if (!this.biayaManual) {
+                    this.biayaUtama = '';
+                }
+                return;
+            }
+            if (!this.biayaManual || this.biayaUtama.trim() === '') {
+                this.biayaUtama = String(this.biayaOtomatis ?? '');
+            }
+        },
+        saatUbahJenis() {
+            if (this.jenis !== 'penghuni') {
+                this.galatTanggal = null;
+                this.infoKuota = null;
+            } else {
+                this.muatInfoKuota(false);
+            }
+        },
+        saatUbahBerat() {
+            this.hitungUlangOtomatis(true);
+            clearTimeout(this.debounceTimer);
+            this.debounceTimer = setTimeout(() => this.muatInfoKuota(false), 250);
+        },
+        saatUbahBiayaManual() {
+            const teks = String(this.biayaUtama ?? '').trim();
+            if (teks === '') {
+                this.biayaManual = false;
+                return;
+            }
+            this.biayaManual = this.biayaOtomatis === null || Number(teks) !== Number(this.biayaOtomatis);
+        },
+        kembalikanOtomatis() {
+            this.biayaManual = false;
+            this.biayaUtama = this.biayaOtomatis !== null ? String(this.biayaOtomatis) : '';
+        },
+        saatUbahTanggal() {
+            this.muatInfoKuota(true);
+        },
+        saatUbahPenghuni() {
+            this.muatInfoKuota(false);
+        },
+        async muatInfoKuota(perbaruiPenghuni = false) {
+            if (!this.endpointInfo || !/^\d{4}-\d{2}-\d{2}$/.test(this.tanggal)) {
+                return;
+            }
+            if (this.abortCtrl) {
+                this.abortCtrl.abort();
+            }
+            this.abortCtrl = new AbortController();
+            this.memuatInfo = true;
+
+            const params = new URLSearchParams({ tanggal: this.tanggal });
+            if (this.jenis === 'penghuni' && this.penghuniId) {
+                params.set('penghuni_id', this.penghuniId);
+            }
+            const beratBersih = String(this.beratKg ?? '').trim();
+            if (beratBersih !== '') {
+                params.set('berat_kg', beratBersih);
+            }
+            if (this.kecualiId) {
+                params.set('kecuali_id', String(this.kecualiId));
+            }
+
+            try {
+                const res = await fetch(`${this.endpointInfo}?${params.toString()}`, {
+                    headers: { Accept: 'application/json' },
+                    signal: this.abortCtrl.signal,
+                });
+                if (!res.ok) {
+                    return;
+                }
+                const data = await res.json();
+                this.tarifPerKg = Number(data.tarif_per_kg ?? this.tarifPerKg);
+                this.minKgCenti = Number(data.min_kg_centi ?? this.minKgCenti);
+                this.hitungUlangOtomatis(true);
+                this.kamarTerdeteksi = data.kamar ?? null;
+                this.infoKuota = data.kuota ?? null;
+                this.galatTanggal = data.galat ?? null;
+                if (perbaruiPenghuni && Array.isArray(data.daftar_penghuni)) {
+                    this.daftarPenghuni = data.daftar_penghuni;
+                }
+            } catch (err) {
+                if (err?.name !== 'AbortError') {
+                    // Abaikan gangguan jaringan sesaat saat pratinjau live
+                }
+            } finally {
+                this.memuatInfo = false;
+            }
+        },
+        tambahItem(namaAwal = '') {
+            if (this.item.length >= this.maksItem) {
+                return;
+            }
+            this.item.push(
+                this.buatBarisItem({
+                    nama: namaAwal === 'Lainnya' ? '' : namaAwal,
+                    jumlah: 1,
+                    berat_kg: '',
+                    biaya: '',
+                })
+            );
+        },
+        hapusItem(idx) {
+            this.item.splice(idx, 1);
+        },
+        pulihkanDraf(data) {
+            if (!data || typeof data !== 'object') {
+                return;
+            }
+            if ('jenis' in data && data.jenis) {
+                this.jenis = String(data.jenis);
+            }
+            if ('tanggal' in data) {
+                this.tanggal = String(data.tanggal ?? '');
+            }
+            if ('penghuni_id' in data) {
+                this.penghuniId = data.penghuni_id ? String(data.penghuni_id) : '';
+            }
+            if ('berat_kg' in data) {
+                this.beratKg = String(data.berat_kg ?? '');
+            }
+            if ('biaya_utama' in data) {
+                this.biayaUtama = String(data.biaya_utama ?? '');
+            }
+            if ('konfirmasi_berat_besar' in data) {
+                this.konfirmasiBeratBesar = Boolean(data.konfirmasi_berat_besar);
+            }
+
+            const barisMap = new Map();
+            for (const [kunci, nilai] of Object.entries(data)) {
+                const match = kunci.match(/^item\[(\d+)\]\[(nama|jumlah|berat_kg|biaya)\]$/);
+                if (!match) {
+                    continue;
+                }
+                const idx = Number(match[1]);
+                const kolom = match[2];
+                if (!barisMap.has(idx)) {
+                    barisMap.set(idx, {});
+                }
+                barisMap.get(idx)[kolom] = nilai;
+            }
+            const terurut = Array.from(barisMap.keys())
+                .sort((a, b) => a - b)
+                .map((idx) => this.buatBarisItem(barisMap.get(idx)));
+            this.item = terurut;
+            this.hitungUlangOtomatis(false);
+            this.saatUbahBiayaManual();
+            if (this.endpointInfo) {
+                this.muatInfoKuota(true);
+            }
+        },
+        get penghuniTersaring() {
+            const kata = this.cariPenghuni.trim().toLowerCase();
+            if (kata === '') {
+                return this.daftarPenghuni;
+            }
+            return this.daftarPenghuni.filter(
+                (p) => String(p.id) === this.penghuniId || String(p.label ?? '').toLowerCase().includes(kata)
+            );
+        },
+        get butuhKonfirmasiBerat() {
+            return this.keCentiKg(this.beratKg) > 3000;
+        },
+        get totalTerpisah() {
+            return this.item.reduce((sum, baris) => {
+                const angka = Number.parseInt(String(baris.biaya ?? '').trim(), 10);
+                return sum + (Number.isFinite(angka) && angka > 0 ? angka : 0);
+            }, 0);
+        },
+        get totalJumlahItem() {
+            return this.item.reduce((sum, baris) => {
+                const angka = Number.parseInt(String(baris.jumlah ?? '1'), 10);
+                return sum + (Number.isFinite(angka) && angka > 0 ? angka : 1);
+            }, 0);
+        },
+        get teksBantuKuota() {
+            if (this.jenis !== 'penghuni') {
+                return this.jenis === 'gedung'
+                    ? 'Cucian internal gedung tidak mengurangi kuota penghuni manapun.'
+                    : 'Cucian tanpa nama tidak mengurangi kuota penghuni sampai pemiliknya ditetapkan.';
+            }
+            if (!this.penghuniId) {
+                return 'Pilih penghuni untuk melihat pemakaian dan sisa kuota bulanan.';
+            }
+            if (this.galatTanggal) {
+                return this.galatTanggal;
+            }
+            if (!this.infoKuota) {
+                return this.memuatInfo ? 'Memuat status kuota...' : '';
+            }
+            if (this.infoKuota.mode_kuota === 'tanpa_kuota') {
+                return `Mode tanpa kuota aktif pada ${this.infoKuota.label_bulan}.`;
+            }
+            const prefix = this.kamarTerdeteksi ? `Kamar ${this.kamarTerdeteksi} · ` : '';
+            const beratAda = this.keCentiKg(this.beratKg) > 0;
+            if (!beratAda) {
+                return `${prefix}Pemakaian ${this.infoKuota.label_bulan}: ${this.infoKuota.sebelum_kg}/${this.infoKuota.kuota_kg} kg (sisa ${this.infoKuota.sisa_kg} kg).`;
+            }
+            if (this.infoKuota.status === 'lewat') {
+                return `${prefix}Kuota ${this.infoKuota.label_bulan}: ${this.infoKuota.sebelum_kg}/${this.infoKuota.kuota_kg} kg → ${this.infoKuota.sesudah_kg} kg (lewat ${this.infoKuota.lewat_kg} kg).`;
+            }
+            return `${prefix}Kuota ${this.infoKuota.label_bulan}: ${this.infoKuota.sebelum_kg}/${this.infoKuota.kuota_kg} kg → ${this.infoKuota.sesudah_kg} kg (sisa ${this.infoKuota.sisa_kg} kg).`;
+        },
+        formatRupiah(n) {
+            return new Intl.NumberFormat('id-ID').format(Number(n || 0));
+        },
+    }));
 });
 
 document.addEventListener('click', (event) => {
@@ -153,6 +452,21 @@ document.addEventListener('click', (event) => {
         const target = document.getElementById(openTrigger.getAttribute('data-modal-open'));
         if (target && typeof target.showModal === 'function') {
             target.showModal();
+        }
+        return;
+    }
+
+    const tetapkanTrigger = event.target.closest('[data-tetapkan-action]');
+    if (tetapkanTrigger) {
+        const formTetapkan = document.getElementById('form-tetapkan-pemilik');
+        const ringkasanEl = document.getElementById('tetapkan-pemilik-ringkasan');
+        const dialogTetapkan = document.getElementById('modal-tetapkan-pemilik');
+        if (formTetapkan && dialogTetapkan) {
+            formTetapkan.action = tetapkanTrigger.getAttribute('data-tetapkan-action') || '';
+            if (ringkasanEl) {
+                ringkasanEl.textContent = tetapkanTrigger.getAttribute('data-tetapkan-ringkasan') || '';
+            }
+            dialogTetapkan.showModal();
         }
         return;
     }
@@ -292,7 +606,7 @@ function initInlineValidation() {
             return `Nilai ${label} harus kelipatan ${el.step}.`;
         }
         if (v.patternMismatch) {
-            return `Format ${label} tidak sesuai.`;
+            return el.dataset.patternMessage || `Format ${label} tidak sesuai.`;
         }
         return '';
     };
@@ -395,6 +709,42 @@ function initInlineValidation() {
 
         if (tglMasukEl && tglMasukEl.value && tglKeluarEl && tglKeluarEl.value && tglKeluarEl.value < tglMasukEl.value) {
             setError(tglKeluarEl, 'Tanggal keluar tidak boleh sebelum tanggal masuk.');
+        }
+
+        // 6. Form laundry: wajib berat atau minimal 1 item terpisah, format desimal aman, & konfirmasi > 30 kg
+        if (form.id === 'form-laundry') {
+            const beratEl = byName('berat_kg');
+            const konfirmasiEl = byName('konfirmasi_berat_besar');
+            const biayaEl = byName('biaya_utama');
+            const itemNamaList = Array.from(form.elements).filter((el) =>
+                /^item\[\d+\]\[nama\]$/.test(el.name || '')
+            );
+
+            const beratRaw = (beratEl?.value || '').trim();
+            if (beratRaw === '' && itemNamaList.length === 0 && beratEl) {
+                setError(beratEl, 'Isi berat cucian utama atau tambahkan minimal satu item terpisah.');
+            } else if (beratEl && beratRaw !== '') {
+                const normal = beratRaw.replace(',', '.');
+                if (!/^\d+(?:\.\d{1,2})?$/.test(normal)) {
+                    setError(beratEl, 'Format berat tidak valid (contoh: 2,4 atau 3.15).');
+                } else {
+                    const angka = Number(normal);
+                    if (angka <= 0) {
+                        setError(beratEl, 'Berat cucian utama harus lebih dari 0 kg.');
+                    } else if (angka > 99.99) {
+                        setError(beratEl, 'Berat cucian utama maksimal 99,99 kg.');
+                    } else if (angka > 30 && konfirmasiEl && !konfirmasiEl.checked) {
+                        setError(
+                            konfirmasiEl,
+                            'Berat melebihi 30 kg. Centang "Saya yakin berat cucian ini benar" untuk melanjutkan.'
+                        );
+                    }
+                }
+            }
+
+            if (biayaEl && biayaEl.value.trim() !== '' && !/^\d+$/.test(biayaEl.value.trim())) {
+                setError(biayaEl, 'Biaya utama harus berupa angka bulat rupiah.');
+            }
         }
     };
 
@@ -525,7 +875,7 @@ function initDirtyFormGuard() {
             if (!el.name || el.disabled) {
                 return false;
             }
-            if (['_token', '_method', 'aktifkan_sekarang'].includes(el.name)) {
+            if (['_token', '_method', 'aktifkan_sekarang', 'ref'].includes(el.name)) {
                 return false;
             }
             if (['submit', 'button', 'reset', 'file'].includes(el.type)) {
@@ -559,6 +909,7 @@ function initDirtyFormGuard() {
         if (!data || typeof data !== 'object') {
             return;
         }
+        form.dispatchEvent(new CustomEvent('draf-pulihkan', { detail: data }));
         for (const el of daftarElemen(form, true)) {
             if (!(el.name in data)) {
                 continue;
@@ -566,10 +917,15 @@ function initDirtyFormGuard() {
             const val = data[el.name];
             if (el.type === 'checkbox') {
                 el.checked = Boolean(val);
+                el.dispatchEvent(new Event('change', { bubbles: true }));
             } else if (el.type === 'radio') {
                 el.checked = el.value === String(val);
+                if (el.checked) {
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             } else {
                 el.value = String(val ?? '');
+                el.dispatchEvent(new Event('input', { bubbles: true }));
             }
         }
     };
@@ -682,11 +1038,26 @@ function initDirtyFormGuard() {
             return isFormDirty(form);
         });
 
+    const kunciTombolSubmit = (form) => {
+        if (!form) {
+            return;
+        }
+        queueMicrotask(() => {
+            form.querySelectorAll('button[data-submit-once], input[data-submit-once]').forEach((btn) => {
+                btn.disabled = true;
+                btn.setAttribute('aria-busy', 'true');
+            });
+        });
+    };
+
+    window.__kunciTombolSubmit = kunciTombolSubmit;
+
     window.__hapusDrafSaatSubmit = (form) => {
         sedangSubmitResmi = true;
         if (form && form.matches && form.matches('form[data-track-dirty]')) {
             hapusDrafTersimpan(form);
         }
+        kunciTombolSubmit(form);
     };
 
     window.__cobaTutupModalDenganCekDraf = (dialogEl) => {
@@ -1011,6 +1382,9 @@ function initConfirmDialog() {
             formToSubmit.requestSubmit(submitter);
         } else {
             HTMLFormElement.prototype.submit.call(formToSubmit);
+        }
+        if (window.__kunciTombolSubmit) {
+            window.__kunciTombolSubmit(formToSubmit);
         }
     });
 }
