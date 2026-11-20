@@ -1,30 +1,23 @@
-<x-app-layout :judul="'Edit ' . $properti->nama">
+<x-app-layout judul="Edit Properti" :subjudul="$properti->nama">
+    <x-slot:aksiHeader>
+        <a
+            href="{{ route('properti.index') }}"
+            aria-label="Kembali ke daftar properti"
+            class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-line-strong bg-surface text-ink hover:bg-sunken"
+        >
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        </a>
+
+        <a
+            href="{{ route('properti.setup.tampilkan', $properti) }}"
+            class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line-strong bg-surface px-3 text-xs font-bold text-ink hover:bg-sunken sm:px-4"
+        >
+            <i class="fas fa-sliders text-maroon" aria-hidden="true"></i>
+            <span class="hidden sm:inline">Wizard Setup</span>
+        </a>
+    </x-slot:aksiHeader>
+
     <div class="space-y-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-                <a
-                    href="{{ route('properti.index') }}"
-                    aria-label="Kembali ke daftar properti"
-                    class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-line-strong bg-surface text-ink hover:bg-sunken"
-                >
-                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                </a>
-                <span class="h-7 w-1 rounded-full bg-gold" aria-hidden="true"></span>
-                <div>
-                    <h1 class="text-xl font-bold text-ink">Edit Properti</h1>
-                    <p class="text-xs text-muted">{{ $properti->nama }}</p>
-                </div>
-            </div>
-
-            <a
-                href="{{ route('properti.setup.tampilkan', $properti) }}"
-                class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line-strong bg-surface px-4 text-xs font-bold text-ink hover:bg-sunken"
-            >
-                <i class="fas fa-sliders text-maroon" aria-hidden="true"></i>
-                <span>Wizard Setup Kamar &amp; Staf</span>
-            </a>
-        </div>
-
         <x-kartu>
             <form
                 method="POST"

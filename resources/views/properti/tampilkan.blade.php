@@ -1,23 +1,17 @@
-<x-app-layout :judul="$properti->nama">
-    <div class="space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <h1 class="text-xl font-bold text-ink">{{ $properti->nama }}</h1>
-                <p class="text-sm text-muted">{{ $properti->alamat ?: 'Alamat belum diisi' }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <x-lencana :status="$properti->status" />
-                @can('update', $properti)
-                    <a
-                        href="{{ route('properti.setup.tampilkan', $properti) }}"
-                        class="inline-flex min-h-11 items-center justify-center rounded-xl bg-maroon px-4 text-xs font-bold text-white hover:bg-maroon-cerah"
-                    >
-                        Setup Properti
-                    </a>
-                @endcan
-            </div>
-        </div>
+<x-app-layout :judul="$properti->nama" :subjudul="$properti->alamat ?: 'Alamat belum diisi'">
+    <x-slot:aksiHeader>
+        <x-lencana :status="$properti->status" />
+        @can('update', $properti)
+            <a
+                href="{{ route('properti.setup.tampilkan', $properti) }}"
+                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-maroon px-3.5 text-xs font-bold text-white hover:bg-maroon-cerah sm:px-4"
+            >
+                Setup
+            </a>
+        @endcan
+    </x-slot:aksiHeader>
 
+    <div class="space-y-4">
         <x-kartu judul="Informasi Dasar">
             <dl class="space-y-2 text-sm">
                 <div class="flex justify-between gap-2">

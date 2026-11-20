@@ -3,8 +3,9 @@
     $penggunaSaatIni = auth()->user();
     $namaAplikasi = config('app.name', 'Laundry-Kos');
     $namaProperti = $propertiAktif?->nama;
-    $subjudulHeader = $namaProperti ?? ($penggunaSaatIni->role->isGlobal() ? 'Pilih properti untuk dikelola' : $namaAplikasi);
+    $subjudulHeader = $subjudul ?? $namaProperti ?? ($penggunaSaatIni->role->isGlobal() ? 'Pilih properti untuk dikelola' : $namaAplikasi);
     $sudahPilihProperti = $propertiAktif !== null;
+    $jumlahNotifikasi = isset($daftarNotifikasi) ? $daftarNotifikasi->count() : 0;
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -174,11 +175,92 @@
                     <span class="hidden h-9 w-1.5 shrink-0 rounded-full bg-maroon sm:block" aria-hidden="true"></span>
 
                     <div class="min-w-0 flex-1">
-                        <div class="truncate text-sm font-bold text-ink sm:text-base">{{ $judul }}</div>
-                        <div class="truncate text-xs text-muted">{{ $subjudulHeader }}</div>
+                        <h1 class="truncate text-sm font-bold text-ink sm:text-base">{{ $judul }}</h1>
+                        <p class="truncate text-xs text-muted">{{ $subjudulHeader }}</p>
                     </div>
 
                     <div class="ml-auto flex shrink-0 items-center gap-2">
+                        @isset($aksiHeader)
+                            <div class="flex shrink-0 items-center gap-2">
+                                {{ $aksiHeader }}
+                            </div>
+                        @endisset
+
+                        {{-- Lonceng Notifikasi --}}
+                        <div class="relative" x-data="dropdownMenu" x-on:keydown.escape.window="close">
+                            <button
+                                type="button"
+                                x-on:click="toggle"
+                                :aria-expanded="open"
+                                aria-label="Notifikasi"
+                                class="relative flex h-11 w-11 items-center justify-center rounded-xl border border-line-strong bg-surface text-ink hover:bg-sunken"
+                            >
+                                <i class="fas fa-bell text-base {{ $jumlahNotifikasi > 0 ? 'text-maroon' : 'text-muted' }}" aria-hidden="true"></i>
+                                @if ($jumlahNotifikasi > 0)
+                                    <span class="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white shadow-xs">
+                                        {{ $jumlahNotifikasi > 99 ? '99+' : $jumlahNotifikasi }}
+                                    </span>
+                                @endif
+                            </button>
+
+                            <div
+                                x-show="open"
+                                x-cloak
+                                x-on:click.outside="close"
+                                class="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-line bg-surface p-2 shadow-xl"
+                            >
+                                <div class="flex items-center justify-between border-b border-line px-3 py-2">
+                                    <span class="text-sm font-bold text-ink">Notifikasi</span>
+                                    <span class="rounded-full bg-sunken px-2 py-0.5 text-[11px] font-bold text-muted">
+                                        {{ $jumlahNotifikasi }} item
+                                    </span>
+                                </div>
+
+                                @if ($jumlahNotifikasi === 0)
+                                    <div class="px-3 py-6 text-center text-xs text-muted">
+                                        Belum ada peringatan kuota atau notifikasi baru saat ini.
+                                    </div>
+                                @else
+                                    <ul class="max-h-72 space-y-1 overflow-y-auto py-1">
+                                        @foreach ($daftarNotifikasi->take(8) as $notif)
+                                            @php
+                                                $ikonNotif = match ($notif['tipe']) {
+                                                    'danger' => 'fa-triangle-exclamation text-danger bg-danger/10',
+                                                    'warn' => 'fa-circle-exclamation text-warn bg-gold-container',
+                                                    default => 'fa-sliders text-info bg-info/10',
+                                                };
+                                            @endphp
+                                            <li>
+                                                <a
+                                                    href="{{ $notif['url'] }}"
+                                                    class="flex items-start gap-2.5 rounded-xl px-2.5 py-2 hover:bg-sunken"
+                                                >
+                                                    <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $ikonNotif }}">
+                                                        <i class="fas {{ explode(' ', $ikonNotif)[0] }} text-xs" aria-hidden="true"></i>
+                                                    </span>
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="truncate text-xs font-bold text-ink">{{ $notif['judul'] }}</p>
+                                                        <p class="mt-0.5 text-[11px] leading-snug text-muted">{{ $notif['keterangan'] }}</p>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+
+                                    @if ($sudahPilihProperti)
+                                        <div class="border-t border-line pt-1.5">
+                                            <a
+                                                href="{{ route('penghuni.index') }}"
+                                                class="flex min-h-10 items-center justify-center rounded-xl text-xs font-bold text-maroon hover:bg-sunken"
+                                            >
+                                                Lihat Semua Penghuni →
+                                            </a>
+                                        </div>
+                                    @endif
+                                @endif
+                            </div>
+                        </div>
+
                         @if ($penggunaSaatIni->role->isGlobal() && $sudahPilihProperti)
                             <form method="POST" action="{{ route('properti.lepas') }}" class="hidden sm:block">
                                 @csrf

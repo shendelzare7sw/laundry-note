@@ -1,13 +1,9 @@
-<x-app-layout :judul="'Setup ' . $properti->nama">
-    <div class="space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <h1 class="text-xl font-bold text-ink">Wizard Setup Properti: {{ $properti->nama }}</h1>
-                <p class="text-sm text-muted">Lengkapi kamar, aturan laundry, dan penugasan staf — klik "Simpan Semua Setup" di bagian bawah untuk menyimpan sekaligus</p>
-            </div>
-            <x-lencana :status="$properti->status" />
-        </div>
+<x-app-layout :judul="'Setup ' . $properti->nama" subjudul="Lengkapi data, kamar, aturan laundry, & staf — simpan sekaligus di bawah">
+    <x-slot:aksiHeader>
+        <x-lencana :status="$properti->status" />
+    </x-slot:aksiHeader>
 
+    <div class="space-y-4">
         @if ($errors->any())
             <x-kartu class="border-danger/30 bg-danger/5">
                 <ul class="list-disc space-y-1 pl-5 text-sm text-danger">
@@ -280,7 +276,7 @@
 
                     <div class="grid gap-3 rounded-xl border border-line bg-alt p-4 sm:grid-cols-2">
                         <x-field label="Nama Karyawan" name="name" id="wizard_name" maxlength="120" placeholder="Nama admin atau penjaga (opsional)" />
-                        <x-field label="Username" name="username" id="wizard_username" minlength="3" maxlength="50" placeholder="Huruf kecil tanpa spasi (opsional)" />
+                        <x-field label="Username" name="username" id="wizard_username" minlength="3" maxlength="50" placeholder="Bebas tanpa spasi, boleh @#$ dll." />
                         <x-field label="Password Awal" name="password" id="wizard_password" type="password" minlength="8" placeholder="Minimal 8 karakter (opsional)" />
                         <x-field label="Peran" name="role" id="wizard_role">
                             <select id="wizard_role" name="role" class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink">

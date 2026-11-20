@@ -54,7 +54,7 @@ class SimpanPenggunaRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:120'],
-            'username' => ['required', 'string', 'min:3', 'max:50', 'alpha_dash', Rule::unique('users', 'username')],
+            'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/^\S+$/', Rule::unique('users', 'username')],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'string', 'min:8'],
             'role' => ['required', Rule::enum(Peran::class)],
@@ -78,7 +78,7 @@ class SimpanPenggunaRequest extends FormRequest
             'username.required' => 'Username belum diisi.',
             'username.min' => 'Username minimal 3 karakter.',
             'username.max' => 'Username maksimal 50 karakter.',
-            'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, tanda hubung (-), dan garis bawah (_), tanpa spasi.',
+            'username.regex' => 'Username tidak boleh mengandung spasi (karakter unik seperti @, #, $, ., _, - diperbolehkan).',
             'username.unique' => 'Username tersebut sudah dipakai akun lain. Silakan gunakan username berbeda.',
             'email.email' => 'Format alamat email tidak valid.',
             'email.unique' => 'Alamat email tersebut sudah terdaftar di sistem.',

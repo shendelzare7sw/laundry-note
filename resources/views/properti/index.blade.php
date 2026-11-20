@@ -1,24 +1,16 @@
-<x-app-layout judul="Pilih Properti">
+<x-app-layout judul="Properti" subjudul="Pilih properti untuk dikelola atau tambah baru">
+    <x-slot:aksiHeader>
+        <button
+            type="button"
+            data-modal-open="modal-tambah-properti"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-maroon px-3.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-maroon-cerah sm:px-5 sm:text-sm"
+        >
+            <i class="fas fa-plus text-xs" aria-hidden="true"></i>
+            <span>Tambah</span>
+        </button>
+    </x-slot:aksiHeader>
+
     <div class="space-y-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2.5">
-                <span class="h-7 w-1 rounded-full bg-gold" aria-hidden="true"></span>
-                <div>
-                    <h1 class="text-xl font-bold text-ink">Properti</h1>
-                    <p class="text-xs text-muted">Pilih properti untuk mulai mengelola operasional, atau tambah properti baru</p>
-                </div>
-            </div>
-
-            <button
-                type="button"
-                data-modal-open="modal-tambah-properti"
-                class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-maroon px-5 text-sm font-bold text-white shadow-xs transition-colors hover:bg-maroon-cerah"
-            >
-                <i class="fas fa-plus text-xs" aria-hidden="true"></i>
-                <span>Tambah</span>
-            </button>
-        </div>
-
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             @forelse ($daftarPropertiKelola as $item)
                 <article class="flex flex-col justify-between rounded-2xl border border-line bg-surface p-4 shadow-xs transition hover:border-line-strong">

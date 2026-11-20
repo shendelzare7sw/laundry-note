@@ -374,4 +374,93 @@ class WizardSetupPropertiTest extends TestCase
         ])->assertRedirect(route('beranda', absolute: false));
         $this->assertAuthenticatedAs($admin);
     }
+
+    public function test_username_karakter_unik_diizinkan_dan_notifikasi_kuota_tampil_di_header_serta_beranda(): void
+    {
+        $this->seed(PengaturanSeeder::class);
+
+        $owner = User::factory()->create([
+            'username' => 'owner_unik',
+            'role' => Peran::Owner,
+            'aktif' => true,
+        ]);
+
+        $properti = Properti::query()->create([
+            'owner_id' => $owner->id,
+            'nama' => 'Dbata Karakter Unik',
+            'nama_properti_laporan' => 'Dbata Karakter Unik',
+            'status' => 'aktif',
+        ]);
+
+        $kamar = Kamar::query()->create([
+            'properti_id' => $properti->id,
+            'nomor' => '205',
+            'lantai' => 2,
+            'aktif' => true,
+        ]);
+
+        $this->actingAs($owner)
+            ->post(route('properti.setup.simpan-semua', $properti), [
+                'nama' => 'Dbata Karakter Unik',
+                'nama_properti_laporan' => 'Dbata Karakter Unik',
+                'status' => 'aktif',
+                'tarif_per_kg' => 8000,
+                'min_kg' => 2,
+                'kuota_kg' => 20,
+                'ambang_mendekati_persen' => 75,
+                'toleransi_kg' => 1,
+                'pembulatan' => 1000,
+                'mode_kuota' => 'penghuni',
+                'jam_edit_penjaga' => 24,
+                'name' => 'Admin Unik',
+                'username' => 'admin@dbata#1$',
+                'password' => 'password123',
+                'role' => Peran::Admin->value,
+            ])
+            ->assertRedirect(route('properti.setup.tampilkan', $properti))
+            ->assertSessionHasNoErrors();
+
+        $adminUnik = User::query()->where('username', 'admin@dbata#1$')->firstOrFail();
+
+        $penghuni = Penghuni::query()->create([
+            'properti_id' => $properti->id,
+            'nama' => 'Budi Lewat Kuota',
+            'status' => 'aktif',
+            'tanggal_masuk' => now('Asia/Jakarta')->startOfMonth()->toDateString(),
+        ]);
+
+        $penghuni->penempatan()->create([
+            'properti_id' => $properti->id,
+            'kamar_id' => $kamar->id,
+            'mulai' => now('Asia/Jakarta')->startOfMonth()->toDateString(),
+            'selesai' => null,
+            'sebab' => 'masuk',
+            'dibuat_oleh' => $adminUnik->id,
+        ]);
+
+        Laundry::query()->create([
+            'properti_id' => $properti->id,
+            'tanggal' => now('Asia/Jakarta')->toDateString(),
+            'jenis' => 'penghuni',
+            'penghuni_id' => $penghuni->id,
+            'kamar_id' => $kamar->id,
+            'berat_kg' => '22.50',
+            'biaya_utama' => 180000,
+            'dicatat_oleh' => $adminUnik->id,
+        ]);
+
+        $this->app['auth']->forgetGuards();
+
+        $this->post('/login', [
+            'username' => 'admin@dbata#1$',
+            'password' => 'password123',
+        ])->assertRedirect(route('beranda', absolute: false));
+
+        $response = $this->actingAs($adminUnik)->get(route('beranda'));
+        $response->assertOk();
+        $response->assertSee('Budi Lewat Kuota');
+        $response->assertSee('melewati kuota');
+        $response->assertSee('22,5 kg');
+        $response->assertSee('aria-label="Notifikasi"', false);
+    }
 }

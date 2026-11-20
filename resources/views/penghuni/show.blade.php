@@ -1,22 +1,20 @@
-<x-app-layout :judul="'Penghuni: ' . $penghuni->nama">
+<x-app-layout judul="Detail Penghuni" :subjudul="$penghuni->nama . ' · ' . $propertiAktif->nama">
     @php
         $kamarTerkini = $penghuni->penempatanAktif?->kamar ?? $penghuni->penempatan->first()?->kamar;
         $isLewat = $kuotaBulanIni['status'] === 'lewat';
     @endphp
 
+    <x-slot:aksiHeader>
+        <a
+            href="{{ route('penghuni.index', ['bulan' => $kuotaBulanIni['bulan']]) }}"
+            class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line-strong bg-surface px-3 text-xs font-medium text-ink hover:bg-sunken sm:px-3.5 sm:text-sm"
+        >
+            <i class="fas fa-arrow-left text-xs" aria-hidden="true"></i>
+            <span class="hidden sm:inline">Kembali ke Daftar</span>
+        </a>
+    </x-slot:aksiHeader>
+
     <div class="space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <a
-                href="{{ route('penghuni.index', ['bulan' => $kuotaBulanIni['bulan']]) }}"
-                class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line-strong bg-surface px-3.5 text-sm font-medium text-ink hover:bg-sunken"
-            >
-                <i class="fas fa-arrow-left text-xs" aria-hidden="true"></i>
-                <span>Kembali ke Daftar Penghuni</span>
-            </a>
-
-            <span class="text-xs font-medium text-muted">{{ $propertiAktif->nama }}</span>
-        </div>
-
         @if ($errors->any())
             <x-kartu class="border-danger/30 bg-danger/5">
                 <ul class="list-disc space-y-1 pl-5 text-sm text-danger">
@@ -43,7 +41,7 @@
                     </div>
 
                     <div>
-                        <h1 class="text-2xl font-bold text-ink">{{ $penghuni->nama }}</h1>
+                        <h2 class="text-2xl font-bold text-ink">{{ $penghuni->nama }}</h2>
                         @if ($penghuni->alias)
                             <p class="text-sm text-muted">Nama panggilan / alias: {{ $penghuni->alias }}</p>
                         @endif

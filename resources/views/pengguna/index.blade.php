@@ -1,21 +1,17 @@
-<x-app-layout judul="Kelola Pengguna">
+<x-app-layout judul="Kelola Pengguna" subjudul="Buat akun staf properti, nonaktifkan akun, atau reset password">
+    <x-slot:aksiHeader>
+        <button
+            type="button"
+            data-modal-open="modal-tambah-pengguna"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-maroon px-3.5 text-xs font-bold text-white hover:bg-maroon-cerah sm:px-5 sm:text-sm"
+        >
+            <i class="fas fa-plus text-xs" aria-hidden="true"></i>
+            <span class="hidden sm:inline">Tambah Akun</span>
+            <span class="sm:hidden">Tambah</span>
+        </button>
+    </x-slot:aksiHeader>
+
     <div class="space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <h1 class="text-xl font-bold text-ink">Kelola Pengguna</h1>
-                <p class="text-sm text-muted">Buat akun staf properti, nonaktifkan akun, atau reset password</p>
-            </div>
-
-            <button
-                type="button"
-                data-modal-open="modal-tambah-pengguna"
-                class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-maroon px-5 text-sm font-bold text-white hover:bg-maroon-cerah"
-            >
-                <i class="fas fa-plus text-xs" aria-hidden="true"></i>
-                <span>Tambah Akun</span>
-            </button>
-        </div>
-
         @if ($errors->any())
             <x-kartu class="border-danger/30 bg-danger/5">
                 <ul class="list-disc space-y-1 pl-5 text-sm text-danger">
@@ -129,7 +125,7 @@
         >
             @csrf
             <x-field label="Nama Lengkap" name="name" maxlength="120" :required="true" placeholder="Nama karyawan" />
-            <x-field label="Username" name="username" minlength="3" maxlength="50" :required="true" placeholder="Huruf kecil tanpa spasi" />
+            <x-field label="Username" name="username" minlength="3" maxlength="50" :required="true" placeholder="Bebas tanpa spasi, boleh @#$ dll." />
             <x-field label="Email (Opsional)" name="email" type="email" placeholder="Opsional" />
             <x-field label="Password Awal" name="password" type="password" minlength="8" :required="true" placeholder="Minimal 8 karakter" />
 

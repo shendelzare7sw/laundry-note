@@ -278,8 +278,8 @@ function initInlineValidation() {
                         setError(usernameEl, 'Username karyawan belum diisi (wajib dilengkapi jika ingin menambah staf baru).');
                     } else if (usernameVal.length < 3) {
                         setError(usernameEl, 'Username karyawan minimal 3 karakter.');
-                    } else if (!/^[a-zA-Z0-9_-]+$/.test(usernameVal)) {
-                        setError(usernameEl, 'Username hanya boleh berisi huruf, angka, tanda hubung (-), dan garis bawah (_), tanpa spasi.');
+                    } else if (!/^\S+$/.test(usernameVal)) {
+                        setError(usernameEl, 'Username tidak boleh mengandung spasi (karakter unik seperti @, #, $, ., _, - diperbolehkan).');
                     }
                 }
                 if (passwordEl) {
@@ -299,9 +299,9 @@ function initInlineValidation() {
             usernameEl &&
             usernameEl.value.trim() !== '' &&
             usernameEl.getAttribute('minlength') &&
-            !/^[a-zA-Z0-9_-]+$/.test(usernameEl.value.trim())
+            !/^\S+$/.test(usernameEl.value.trim())
         ) {
-            setError(usernameEl, 'Username hanya boleh berisi huruf, angka, tanda hubung (-), dan garis bawah (_), tanpa spasi.');
+            setError(usernameEl, 'Username tidak boleh mengandung spasi (karakter unik seperti @, #, $, ., _, - diperbolehkan).');
         }
 
         // 3. Cek kecocokan password & password_confirmation

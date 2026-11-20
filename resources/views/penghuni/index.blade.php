@@ -1,25 +1,19 @@
-<x-app-layout judul="Penghuni">
+<x-app-layout judul="Penghuni" :subjudul="$propertiAktif->nama . ' · Periode kuota ' . $rentangBulan['label']">
+    @if ($bolehKelolaKontrak)
+        <x-slot:aksiHeader>
+            <button
+                type="button"
+                data-modal-open="modal-penghuni-masuk"
+                class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-maroon px-3.5 text-xs font-bold text-white hover:bg-maroon-cerah sm:px-5 sm:text-sm"
+            >
+                <i class="fas fa-user-plus text-xs" aria-hidden="true"></i>
+                <span class="hidden sm:inline">Penghuni Masuk</span>
+                <span class="sm:hidden">Masuk</span>
+            </button>
+        </x-slot:aksiHeader>
+    @endif
+
     <div class="space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <h1 class="text-xl font-bold text-ink">Penghuni</h1>
-                <p class="text-sm text-muted">
-                    {{ $propertiAktif->nama }} · Periode kuota {{ $rentangBulan['label'] }}
-                </p>
-            </div>
-
-            @if ($bolehKelolaKontrak)
-                <button
-                    type="button"
-                    data-modal-open="modal-penghuni-masuk"
-                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-maroon px-5 text-sm font-bold text-white hover:bg-maroon-cerah"
-                >
-                    <i class="fas fa-user-plus text-xs" aria-hidden="true"></i>
-                    <span>Penghuni Masuk</span>
-                </button>
-            @endif
-        </div>
-
         @if (! $bolehKelolaKontrak)
             <x-kartu class="border-gold/30 bg-gold-container/60" padding="px-4 py-3">
                 <p class="text-xs text-on-gold sm:text-sm">

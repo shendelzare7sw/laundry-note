@@ -1,7 +1,5 @@
-<x-app-layout judul="Lainnya">
+<x-app-layout judul="Menu Lainnya" :subjudul="$propertiAktif?->nama ?? 'Pengaturan akun dan manajemen'">
     <div class="space-y-4">
-        <h1 class="text-xl font-bold text-ink">Menu Lainnya</h1>
-
         <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             @can('viewAny', \App\Models\User::class)
                 <a href="{{ route('pengguna.index') }}" class="flex items-start gap-3 rounded-2xl border border-line bg-surface p-4 shadow-xs hover:bg-alt">
