@@ -1389,8 +1389,116 @@ function initConfirmDialog() {
     });
 }
 
+function initLaporanActions() {
+    document.addEventListener('click', (event) => {
+        const printBtn = event.target.closest('[data-print-laporan]');
+        if (printBtn) {
+            window.print();
+        }
+    });
+
+    const copyTimers = new WeakMap();
+
+    function laporSalin(button, berhasil) {
+        const tip = button.nextElementSibling;
+        clearTimeout(copyTimers.get(button));
+        button.removeAttribute('data-copied');
+        button.removeAttribute('data-failed');
+        const pesan = berhasil ? 'Tersalin' : 'Gagal menyalin';
+        if (tip) {
+            tip.textContent = '';
+        }
+        void button.offsetWidth;
+        button.setAttribute(berhasil ? 'data-copied' : 'data-failed', '');
+        if (tip) {
+            requestAnimationFrame(() => {
+                tip.textContent = pesan;
+            });
+        }
+        copyTimers.set(
+            button,
+            setTimeout(() => {
+                button.removeAttribute('data-copied');
+                button.removeAttribute('data-failed');
+                if (tip) {
+                    tip.textContent = '';
+                }
+            }, 2200),
+        );
+    }
+
+    async function salinTeksTarget(button, target) {
+        const teks = target.matches('input, textarea') ? target.value : target.innerText.trim();
+        if (!teks) {
+            return;
+        }
+        try {
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                await navigator.clipboard.writeText(teks);
+                laporSalin(button, true);
+                return;
+            }
+            if (target.matches('input, textarea')) {
+                target.select();
+                const sukses = document.execCommand('copy');
+                laporSalin(button, sukses);
+                return;
+            }
+            laporSalin(button, false);
+        } catch {
+            laporSalin(button, false);
+        }
+    }
+
+    if ('CommandEvent' in window) {
+        document.addEventListener(
+            'command',
+            (event) => {
+                if (event.command === '--copy' && event.source && event.target) {
+                    salinTeksTarget(event.source, event.target);
+                }
+            },
+            true,
+        );
+    } else {
+        document.addEventListener('click', (event) => {
+            const button = event.target.closest('button[command="--copy"]');
+            if (!button) {
+                return;
+            }
+            const target = document.getElementById(button.getAttribute('commandfor') || '');
+            if (target) {
+                salinTeksTarget(button, target);
+            }
+        });
+    }
+
+    if (typeof navigator.share === 'function') {
+        document.querySelectorAll('[data-share-target]').forEach((btn) => {
+            btn.classList.remove('hidden');
+            btn.classList.add('inline-flex');
+            btn.addEventListener('click', async () => {
+                const target = document.getElementById(btn.dataset.shareTarget || '');
+                if (!target) {
+                    return;
+                }
+                const text = target.matches('input, textarea') ? target.value : target.innerText.trim();
+                try {
+                    await navigator.share({
+                        title: btn.dataset.shareTitle || 'Rekap Laundry',
+                        text,
+                    });
+                } catch {
+                    // Pengguna membatalkan dialog bagikan native
+                }
+            });
+        });
+    }
+}
+
 window.Alpine = Alpine;
 Alpine.start();
 initInlineValidation();
 initDirtyFormGuard();
 initConfirmDialog();
+initLaporanActions();

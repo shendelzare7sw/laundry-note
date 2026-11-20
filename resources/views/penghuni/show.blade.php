@@ -92,7 +92,17 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2">
-                    @if ($penghuni->no_wa)
+                    @if (! empty($waTagihan['url']))
+                        <a
+                            href="{{ $waTagihan['url'] }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-ok px-4 text-sm font-bold text-white hover:bg-ok/90"
+                        >
+                            <i class="fab fa-whatsapp text-base" aria-hidden="true"></i>
+                            <span>Kirim Tagihan WA</span>
+                        </a>
+                    @elseif ($penghuni->no_wa)
                         <a
                             href="https://wa.me/{{ $penghuni->no_wa }}"
                             target="_blank"
@@ -101,6 +111,18 @@
                         >
                             <i class="fab fa-whatsapp text-base" aria-hidden="true"></i>
                             <span>Chat WhatsApp</span>
+                        </a>
+                    @endif
+
+                    @if (! empty($waPeringatan['url']))
+                        <a
+                            href="{{ $waPeringatan['url'] }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-gold-container px-4 text-sm font-bold text-on-gold hover:bg-gold/25"
+                        >
+                            <i class="fab fa-whatsapp text-sm" aria-hidden="true"></i>
+                            <span>Peringatan Kuota</span>
                         </a>
                     @endif
 

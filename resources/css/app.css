@@ -106,3 +106,42 @@ progress.kuota-progress::-moz-progress-bar {
 .kuota-lewat {
     --kuota-fill: var(--color-danger);
 }
+
+.copy-tip {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.copy-button[data-copied] + .copy-tip,
+.copy-button[data-failed] + .copy-tip {
+    opacity: 1;
+}
+
+.copy-button[data-failed] + .copy-tip {
+    color: var(--color-danger);
+}
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
+    html,
+    body {
+        background-color: #ffffff !important;
+        color: #1c1c1c !important;
+        color-scheme: light !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    main {
+        padding: 0 !important;
+    }
+
+    .kartu-laporan {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}

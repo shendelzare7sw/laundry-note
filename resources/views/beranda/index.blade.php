@@ -74,15 +74,15 @@
                                 </div>
 
                                 <div class="flex items-center gap-2">
-                                    @if ($p->no_wa)
+                                    @if (! empty($item['wa_url']))
                                         <a
-                                            href="https://wa.me/{{ $p->no_wa }}"
+                                            href="{{ $item['wa_url'] }}"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             class="inline-flex min-h-9 items-center gap-1 rounded-lg bg-ok px-2.5 text-xs font-bold text-white hover:bg-ok/90"
                                         >
                                             <i class="fab fa-whatsapp" aria-hidden="true"></i>
-                                            <span>WA</span>
+                                            <span>Kirim WA</span>
                                         </a>
                                     @endif
                                     <a

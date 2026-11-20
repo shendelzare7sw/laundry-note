@@ -15,6 +15,7 @@ use App\Models\Properti;
 use App\Services\KuotaService;
 use App\Services\PenempatanService;
 use App\Services\PengaturanService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -26,6 +27,7 @@ class PenghuniController extends Controller
         private readonly KuotaService $kuotaService,
         private readonly PenempatanService $penempatanService,
         private readonly PengaturanService $pengaturanService,
+        private readonly WhatsAppService $waService,
     ) {}
 
     public function index(Request $request): View
@@ -196,6 +198,11 @@ class PenghuniController extends Controller
                 ->whereDate('tanggal', '>=', $penempatanTerbaru->mulai->toDateString())
                 ->exists();
 
+        $waTagihan = $this->waService->pesanTagihanDariPenghuni($propertiAktif, $penghuni, $kuotaBulanIni['bulan']);
+        $waPeringatan = in_array($kuotaBulanIni['status'], ['mendekati', 'lewat'], true)
+            ? $this->waService->pesanPeringatanKuota($propertiAktif, $penghuni, $kuotaBulanIni, $kuotaBulanIni['bulan'])
+            : null;
+
         return view('penghuni.show', [
             'propertiAktif' => $propertiAktif,
             'penghuni' => $penghuni,
@@ -208,6 +215,8 @@ class PenghuniController extends Controller
             'bolehSesuaikanKuota' => $bolehSesuaikanKuota,
             'bisaBatalkanPindah' => $bisaBatalkanPindah,
             'penjagaBolehKontrak' => $this->pengaturanService->penjagaBolehKelolaKontrak($propertiAktif),
+            'waTagihan' => $waTagihan,
+            'waPeringatan' => $waPeringatan,
         ]);
     }
 

@@ -7,6 +7,7 @@ use App\Models\Penghuni;
 use App\Models\Properti;
 use App\Services\HargaService;
 use App\Services\KuotaService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -15,6 +16,7 @@ class BerandaController extends Controller
     public function __construct(
         private readonly KuotaService $kuotaService,
         private readonly HargaService $hargaService,
+        private readonly WhatsAppService $waService,
     ) {}
 
     public function index(Request $request): View
@@ -62,16 +64,24 @@ class BerandaController extends Controller
             $totalBayarTerpisah = (int) ($agregatBulanan?->total_terpisah ?? 0);
 
             $daftarPeringatan = $penghuniAktif
-                ->map(function (Penghuni $penghuni) use ($ringkasanKuota): ?array {
+                ->map(function (Penghuni $penghuni) use ($properti, $ringkasanKuota, $rentangBulan): ?array {
                     $kuota = $ringkasanKuota->get($penghuni->id);
                     if ($kuota === null || ! in_array($kuota['status'], ['lewat', 'mendekati'], true)) {
                         return null;
                     }
 
+                    $waPeringatan = $this->waService->pesanPeringatanKuota(
+                        properti: $properti,
+                        penghuni: $penghuni,
+                        kuota: $kuota,
+                        bulan: $rentangBulan['bulan'],
+                    );
+
                     return [
                         'penghuni' => $penghuni,
                         'kamar' => $penghuni->penempatanAktif?->kamar?->nomor ?? '-',
                         'kuota' => $kuota,
+                        'wa_url' => $waPeringatan['url'],
                     ];
                 })
                 ->filter()
