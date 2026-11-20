@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BerandaController;
+use App\Http\Controllers\LaundryController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\PenghuniController;
 use App\Http\Controllers\PropertiController;
@@ -20,7 +21,20 @@ Route::middleware('auth')->group(function (): void {
 Route::middleware(['auth', 'properti.aktif'])->group(function (): void {
     Route::get('/', [BerandaController::class, 'index'])->name('beranda');
 
-    Route::view('/laundry', 'laundry.index')->name('laundry.index');
+    Route::get('/laundry', [LaundryController::class, 'index'])->name('laundry.index');
+    Route::get('/laundry/tambah', [LaundryController::class, 'create'])->name('laundry.create');
+    Route::post('/laundry', [LaundryController::class, 'store'])->name('laundry.store');
+    Route::get('/laundry/terhapus', [LaundryController::class, 'terhapus'])->name('laundry.terhapus');
+    Route::get('/laundry/info-kuota', [LaundryController::class, 'infoKuota'])->name('laundry.info-kuota');
+    Route::post('/laundry/lengkapi-harga', [LaundryController::class, 'lengkapiHarga'])->name('laundry.lengkapi-harga');
+    Route::get('/laundry/{laundry}/ubah', [LaundryController::class, 'edit'])->name('laundry.edit');
+    Route::put('/laundry/{laundry}', [LaundryController::class, 'update'])->name('laundry.update');
+    Route::delete('/laundry/{laundry}', [LaundryController::class, 'destroy'])->name('laundry.destroy');
+    Route::post('/laundry/{laundryId}/pulihkan', [LaundryController::class, 'pulihkan'])
+        ->whereNumber('laundryId')
+        ->name('laundry.pulihkan');
+    Route::post('/laundry/{laundry}/tetapkan-pemilik', [LaundryController::class, 'tetapkanPemilik'])
+        ->name('laundry.tetapkan-pemilik');
 
     Route::get('/penghuni', [PenghuniController::class, 'index'])->name('penghuni.index');
     Route::post('/penghuni', [PenghuniController::class, 'store'])->name('penghuni.store');
