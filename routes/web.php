@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BerandaController;
+use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\LaundryController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\PenghuniController;
@@ -47,7 +48,8 @@ Route::middleware(['auth', 'properti.aktif'])->group(function (): void {
     Route::post('/penghuni/{penghuni}/ganti-nomor', [PenghuniController::class, 'gantiNomor'])->name('penghuni.ganti-nomor');
     Route::post('/penghuni/{penghuni}/penyesuaian-kuota', [PenghuniController::class, 'simpanPenyesuaianKuota'])->name('penghuni.penyesuaian-kuota');
 
-    Route::view('/laporan', 'laporan.index')->name('laporan.index');
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+    Route::get('/laporan/csv', [LaporanController::class, 'csv'])->name('laporan.csv');
     Route::view('/lainnya', 'lainnya.index')->name('lainnya.index');
 
     Route::get('/properti', [PropertiController::class, 'index'])->name('properti.index');
