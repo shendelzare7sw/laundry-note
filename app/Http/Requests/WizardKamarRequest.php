@@ -28,6 +28,29 @@ class WizardKamarRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'lantai.required' => 'Minimal harus ada 1 baris rentang kamar lantai.',
+            'lantai.*.lantai.required' => 'Nomor lantai belum diisi.',
+            'lantai.*.lantai.integer' => 'Nomor lantai harus berupa angka bulat.',
+            'lantai.*.lantai.min' => 'Nomor lantai minimal 1.',
+            'lantai.*.lantai.max' => 'Nomor lantai maksimal 99.',
+            'lantai.*.dari.required' => 'Nomor kamar awal belum diisi.',
+            'lantai.*.dari.integer' => 'Nomor kamar awal harus berupa angka bulat.',
+            'lantai.*.dari.min' => 'Nomor kamar awal minimal 1.',
+            'lantai.*.dari.max' => 'Nomor kamar awal maksimal 9999.',
+            'lantai.*.sampai.required' => 'Nomor kamar akhir belum diisi.',
+            'lantai.*.sampai.integer' => 'Nomor kamar akhir harus berupa angka bulat.',
+            'lantai.*.sampai.min' => 'Nomor kamar akhir minimal 1.',
+            'lantai.*.sampai.max' => 'Nomor kamar akhir maksimal 9999.',
+            'lantai.*.sampai.gte' => 'Nomor kamar akhir tidak boleh lebih kecil dari nomor kamar awal.',
+        ];
+    }
+
     public function after(): array
     {
         return [

@@ -211,4 +211,50 @@ class WizardSetupPropertiTest extends TestCase
             'aktif' => true,
         ]);
     }
+
+    public function test_pesan_validasi_password_staf_kosong_pada_setup_tampil_bahasa_indonesia(): void
+    {
+        $this->seed(PengaturanSeeder::class);
+
+        $owner = User::factory()->create([
+            'username' => 'owner_val',
+            'role' => Peran::Owner,
+            'aktif' => true,
+        ]);
+
+        $properti = Properti::query()->create([
+            'owner_id' => $owner->id,
+            'nama' => 'Dbata Validasi',
+            'nama_properti_laporan' => 'Dbata Validasi',
+            'status' => 'draf',
+        ]);
+
+        $response = $this->from(route('properti.setup.tampilkan', $properti))
+            ->actingAs($owner)
+            ->post(route('properti.setup.simpan-semua', $properti), [
+                'nama' => 'Dbata Validasi',
+                'nama_properti_laporan' => 'Dbata Validasi',
+                'tarif_per_kg' => 8000,
+                'min_kg' => 2,
+                'kuota_kg' => 20,
+                'ambang_mendekati_persen' => 75,
+                'toleransi_kg' => 1,
+                'pembulatan' => 1000,
+                'mode_kuota' => 'penghuni',
+                'jam_edit_penjaga' => 24,
+                'name' => 'Admin Staf',
+                'username' => 'admin_dbata',
+                'password' => '',
+                'role' => Peran::Admin->value,
+            ]);
+
+        $response->assertRedirect(route('properti.setup.tampilkan', $properti));
+        $response->assertSessionHasErrors([
+            'password' => 'Password awal belum diisi (wajib dilengkapi jika nama atau username karyawan diisi).',
+        ]);
+        $this->assertStringNotContainsString(
+            'validation.required_with',
+            implode(' ', session('errors')->all())
+        );
+    }
 }

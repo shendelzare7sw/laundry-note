@@ -29,4 +29,27 @@ class UbahPenghuniRequest extends FormRequest
             'tanggal_masuk_perkiraan' => ['sometimes', 'boolean'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'nama' => 'nama penghuni',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'nama.required' => 'Nama lengkap penghuni belum diisi.',
+            'nama.max' => 'Nama lengkap penghuni maksimal 120 karakter.',
+            'alias.max' => 'Nama panggilan / alias maksimal 120 karakter.',
+            'catatan.max' => 'Catatan penghuni maksimal 500 karakter.',
+        ];
+    }
 }

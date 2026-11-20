@@ -194,12 +194,12 @@
             {{-- Langkah 3: Aturan Laundry --}}
             <x-kartu judul="Langkah 3 · Aturan Laundry Properti" subjudul="Disalin dari nilai bawaan sistem dan dapat disesuaikan per properti">
                 <div class="grid gap-4 sm:grid-cols-3">
-                    <x-field label="Tarif per Kg (Rp)" name="tarif_per_kg" type="number" :value="$aturanSaatIni['tarif_per_kg'] ?? 8000" :required="true" />
-                    <x-field label="Minimum Berat (Kg)" name="min_kg" type="number" step="0.1" :value="$aturanSaatIni['min_kg'] ?? 2" :required="true" />
-                    <x-field label="Kuota Bulanan (Kg)" name="kuota_kg" type="number" step="0.1" :value="$aturanSaatIni['kuota_kg'] ?? 20" :required="true" />
-                    <x-field label="Ambang Mendekati (%)" name="ambang_mendekati_persen" type="number" :value="$aturanSaatIni['ambang_mendekati_persen'] ?? 75" :required="true" />
-                    <x-field label="Toleransi Lewat Kuota (Kg)" name="toleransi_kg" type="number" step="0.1" :value="$aturanSaatIni['toleransi_kg'] ?? 1" :required="true" />
-                    <x-field label="Pembulatan Tagihan (Rp)" name="pembulatan" type="number" :value="$aturanSaatIni['pembulatan'] ?? 1000" :required="true" />
+                    <x-field label="Tarif per Kg (Rp)" name="tarif_per_kg" type="number" min="100" max="1000000" :value="$aturanSaatIni['tarif_per_kg'] ?? 8000" :required="true" />
+                    <x-field label="Minimum Berat (Kg)" name="min_kg" type="number" min="0" max="50" step="0.1" :value="$aturanSaatIni['min_kg'] ?? 2" :required="true" />
+                    <x-field label="Kuota Bulanan (Kg)" name="kuota_kg" type="number" min="0" max="500" step="0.1" :value="$aturanSaatIni['kuota_kg'] ?? 20" :required="true" />
+                    <x-field label="Ambang Mendekati (%)" name="ambang_mendekati_persen" type="number" min="1" max="100" :value="$aturanSaatIni['ambang_mendekati_persen'] ?? 75" :required="true" />
+                    <x-field label="Toleransi Lewat Kuota (Kg)" name="toleransi_kg" type="number" min="0" max="50" step="0.1" :value="$aturanSaatIni['toleransi_kg'] ?? 1" :required="true" />
+                    <x-field label="Pembulatan Tagihan (Rp)" name="pembulatan" type="number" min="1" max="100000" :value="$aturanSaatIni['pembulatan'] ?? 1000" :required="true" />
 
                     <x-field label="Mode Kuota" name="mode_kuota" :required="true">
                         <select id="mode_kuota" name="mode_kuota" class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink">
@@ -208,7 +208,7 @@
                         </select>
                     </x-field>
 
-                    <x-field label="Batas Jam Edit Penjaga" name="jam_edit_penjaga" type="number" :value="$aturanSaatIni['jam_edit_penjaga'] ?? 24" :required="true" />
+                    <x-field label="Batas Jam Edit Penjaga" name="jam_edit_penjaga" type="number" min="1" max="168" :value="$aturanSaatIni['jam_edit_penjaga'] ?? 24" :required="true" />
 
                     <div class="flex items-end pb-1">
                         <label class="inline-flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-ink">
@@ -260,9 +260,9 @@
                     </div>
 
                     <div class="grid gap-3 rounded-xl border border-line bg-alt p-4 sm:grid-cols-2">
-                        <x-field label="Nama Karyawan" name="name" id="wizard_name" placeholder="Nama admin atau penjaga (opsional)" />
-                        <x-field label="Username" name="username" id="wizard_username" placeholder="Huruf kecil tanpa spasi (opsional)" />
-                        <x-field label="Password Awal" name="password" id="wizard_password" type="password" placeholder="Minimal 8 karakter (opsional)" />
+                        <x-field label="Nama Karyawan" name="name" id="wizard_name" maxlength="120" placeholder="Nama admin atau penjaga (opsional)" />
+                        <x-field label="Username" name="username" id="wizard_username" minlength="3" maxlength="50" placeholder="Huruf kecil tanpa spasi (opsional)" />
+                        <x-field label="Password Awal" name="password" id="wizard_password" type="password" minlength="8" placeholder="Minimal 8 karakter (opsional)" />
                         <x-field label="Peran" name="role" id="wizard_role">
                             <select id="wizard_role" name="role" class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink">
                                 @if (! $siapAdmin)

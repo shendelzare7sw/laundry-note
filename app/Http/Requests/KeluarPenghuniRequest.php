@@ -27,4 +27,16 @@ class KeluarPenghuniRequest extends FormRequest
             'alasan_keluar' => ['nullable', 'string', 'max:255'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'tanggal_keluar.required' => 'Tanggal keluar belum diisi.',
+            'tanggal_keluar.date' => 'Format tanggal keluar tidak valid.',
+            'alasan_keluar.max' => 'Alasan keluar maksimal 255 karakter.',
+        ];
+    }
 }

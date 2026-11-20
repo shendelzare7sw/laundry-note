@@ -35,4 +35,18 @@ class PindahKamarRequest extends FormRequest
             'tanggal_pindah' => ['required', 'date'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'kamar_tujuan_id.required' => 'Kamar tujuan pindah belum dipilih.',
+            'kamar_tujuan_id.integer' => 'Pilihan kamar tujuan pindah tidak valid.',
+            'kamar_tujuan_id.exists' => 'Kamar tujuan pindah tidak valid atau bukan milik properti ini.',
+            'tanggal_pindah.required' => 'Tanggal efektif pindah belum diisi.',
+            'tanggal_pindah.date' => 'Format tanggal efektif pindah tidak valid.',
+        ];
+    }
 }

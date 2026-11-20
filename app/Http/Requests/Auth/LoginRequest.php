@@ -30,6 +30,18 @@ class LoginRequest extends FormRequest
     }
 
     /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'username.required' => 'Username belum diisi.',
+            'username.max' => 'Username terlalu panjang (maksimal 100 karakter).',
+            'password.required' => 'Password belum diisi.',
+        ];
+    }
+
+    /**
      * @throws ValidationException
      */
     public function authenticate(): void

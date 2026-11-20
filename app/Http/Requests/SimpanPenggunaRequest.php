@@ -67,6 +67,30 @@ class SimpanPenggunaRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Nama lengkap pengguna belum diisi.',
+            'name.max' => 'Nama lengkap pengguna maksimal 120 karakter.',
+            'username.required' => 'Username belum diisi.',
+            'username.min' => 'Username minimal 3 karakter.',
+            'username.max' => 'Username maksimal 50 karakter.',
+            'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, tanda hubung (-), dan garis bawah (_), tanpa spasi.',
+            'username.unique' => 'Username tersebut sudah dipakai akun lain. Silakan gunakan username berbeda.',
+            'email.email' => 'Format alamat email tidak valid.',
+            'email.unique' => 'Alamat email tersebut sudah terdaftar di sistem.',
+            'password.required' => 'Password awal belum diisi.',
+            'password.min' => 'Password awal minimal 8 karakter.',
+            'role.required' => 'Peran pengguna belum dipilih.',
+            'role.enum' => 'Peran pengguna yang dipilih tidak valid.',
+            'properti_id.required' => 'Properti penempatan wajib dipilih untuk staf properti.',
+            'properti_id.exists' => 'Properti penempatan yang dipilih tidak valid.',
+        ];
+    }
+
     public function after(): array
     {
         return [

@@ -56,4 +56,22 @@ class PropertiRequest extends FormRequest
             'status' => ['required', Rule::in(['draf', 'aktif', 'arsip'])],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'nama.required' => 'Nama properti belum diisi.',
+            'nama.max' => 'Nama properti maksimal 120 karakter.',
+            'nama_properti_laporan.required' => 'Nama properti di laporan belum diisi.',
+            'nama_properti_laporan.max' => 'Nama properti di laporan maksimal 120 karakter.',
+            'alamat.max' => 'Alamat properti maksimal 500 karakter.',
+            'no_wa_admin.max' => 'Nomor WhatsApp admin maksimal 30 karakter.',
+            'deskripsi.max' => 'Deskripsi properti maksimal 500 karakter.',
+            'status.required' => 'Status properti belum dipilih.',
+            'status.in' => 'Status properti yang dipilih tidak valid.',
+        ];
+    }
 }

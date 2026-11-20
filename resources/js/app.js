@@ -129,6 +129,328 @@ document.addEventListener('click', (event) => {
     }
 });
 
+function initInlineValidation() {
+    const seluruhForm = Array.from(document.querySelectorAll('form[method="POST"], form[method="post"]'));
+    for (const form of seluruhForm) {
+        form.setAttribute('novalidate', 'novalidate');
+    }
+
+    const ambilLabelField = (el) => {
+        if (el.dataset.fieldLabel) {
+            return el.dataset.fieldLabel.trim();
+        }
+        const wrapper = el.closest('[data-field-wrapper]');
+        if (wrapper?.dataset.fieldLabel) {
+            return wrapper.dataset.fieldLabel.trim();
+        }
+        if (el.id) {
+            const labelEl = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+            if (labelEl) {
+                return labelEl.textContent.replace(/\*/g, '').trim();
+            }
+        }
+        return el.name || 'Isian ini';
+    };
+
+    const cariElemenError = (el) => {
+        const wrapper = el.closest('[data-field-wrapper]');
+        if (wrapper) {
+            const p = wrapper.querySelector('[data-field-error]');
+            if (p) {
+                return p;
+            }
+        }
+        if (el.id) {
+            const byId = document.getElementById(`${el.id}-error`);
+            if (byId) {
+                return byId;
+            }
+        }
+        if (el.parentElement) {
+            return el.parentElement.querySelector('[data-client-field-error]');
+        }
+        return null;
+    };
+
+    const bersihkanErrorField = (el) => {
+        if (!el || typeof el.setCustomValidity !== 'function') {
+            return;
+        }
+        el.setCustomValidity('');
+        el.setAttribute('aria-invalid', 'false');
+        el.classList.remove('border-danger');
+        if (!el.classList.contains('border-line-strong')) {
+            el.classList.add('border-line-strong');
+        }
+
+        const errorEl = cariElemenError(el);
+        if (errorEl) {
+            if (errorEl.hasAttribute('data-client-field-error')) {
+                errorEl.remove();
+            } else {
+                errorEl.textContent = '';
+                errorEl.classList.add('hidden');
+            }
+        }
+    };
+
+    const tampilkanErrorField = (el, pesan) => {
+        el.setCustomValidity(pesan);
+        el.setAttribute('aria-invalid', 'true');
+        el.classList.remove('border-line-strong');
+        el.classList.add('border-danger');
+
+        let errorEl = cariElemenError(el);
+        if (!errorEl && el.parentElement) {
+            errorEl = document.createElement('p');
+            errorEl.setAttribute('data-client-field-error', 'true');
+            errorEl.className = 'mt-1 text-xs font-medium text-danger';
+            el.parentElement.appendChild(errorEl);
+        }
+        if (errorEl) {
+            errorEl.textContent = pesan;
+            errorEl.classList.remove('hidden');
+        }
+    };
+
+    const pesanConstraintHtml = (el) => {
+        const v = el.validity;
+        const label = ambilLabelField(el);
+
+        if (v.valueMissing) {
+            if (el.tagName === 'SELECT') {
+                return `${label} belum dipilih.`;
+            }
+            if (el.type === 'checkbox') {
+                return `${label} wajib dicentang.`;
+            }
+            return `${label} belum diisi.`;
+        }
+        if (v.badInput) {
+            return `${label} harus berupa angka yang valid.`;
+        }
+        if (v.typeMismatch) {
+            if (el.type === 'email') {
+                return `Format alamat email pada ${label} tidak valid.`;
+            }
+            return `Format ${label} tidak valid.`;
+        }
+        if (v.tooShort) {
+            return `${label} minimal ${el.minLength} karakter.`;
+        }
+        if (v.tooLong) {
+            return `${label} maksimal ${el.maxLength} karakter.`;
+        }
+        if (v.rangeUnderflow) {
+            return `Nilai ${label} minimal ${el.min}.`;
+        }
+        if (v.rangeOverflow) {
+            return `Nilai ${label} maksimal ${el.max}.`;
+        }
+        if (v.stepMismatch) {
+            return `Nilai ${label} harus kelipatan ${el.step}.`;
+        }
+        if (v.patternMismatch) {
+            return `Format ${label} tidak sesuai.`;
+        }
+        return '';
+    };
+
+    const validasiAturanKhusus = (form, setError) => {
+        const byName = (name) => Array.from(form.elements).find((el) => el.name === name);
+
+        // 1. Wizard Setup: jika salah satu kolom staf diisi, wajib lengkapi name + username + password
+        if (form.id === 'form-setup-semua') {
+            const nameEl = byName('name');
+            const usernameEl = byName('username');
+            const passwordEl = byName('password');
+
+            const nameVal = (nameEl?.value || '').trim();
+            const usernameVal = (usernameEl?.value || '').trim();
+            const passwordVal = passwordEl?.value || '';
+
+            if (nameVal !== '' || usernameVal !== '' || passwordVal !== '') {
+                if (nameEl && nameVal === '') {
+                    setError(nameEl, 'Nama karyawan belum diisi (wajib dilengkapi jika ingin menambah staf baru).');
+                }
+                if (usernameEl) {
+                    if (usernameVal === '') {
+                        setError(usernameEl, 'Username karyawan belum diisi (wajib dilengkapi jika ingin menambah staf baru).');
+                    } else if (usernameVal.length < 3) {
+                        setError(usernameEl, 'Username karyawan minimal 3 karakter.');
+                    } else if (!/^[a-zA-Z0-9_-]+$/.test(usernameVal)) {
+                        setError(usernameEl, 'Username hanya boleh berisi huruf, angka, tanda hubung (-), dan garis bawah (_), tanpa spasi.');
+                    }
+                }
+                if (passwordEl) {
+                    if (passwordVal === '') {
+                        setError(passwordEl, 'Password awal belum diisi (wajib dilengkapi jika nama atau username karyawan diisi).');
+                    } else if (passwordVal.length < 8) {
+                        setError(passwordEl, 'Password awal minimal 8 karakter.');
+                    }
+                }
+            }
+        }
+
+        // 2. Cek format username pada form pengguna
+        const usernameEl = byName('username');
+        if (
+            form.id !== 'form-setup-semua' &&
+            usernameEl &&
+            usernameEl.value.trim() !== '' &&
+            usernameEl.getAttribute('minlength') &&
+            !/^[a-zA-Z0-9_-]+$/.test(usernameEl.value.trim())
+        ) {
+            setError(usernameEl, 'Username hanya boleh berisi huruf, angka, tanda hubung (-), dan garis bawah (_), tanpa spasi.');
+        }
+
+        // 3. Cek kecocokan password & password_confirmation
+        const passEl = byName('password');
+        const passConfEl = byName('password_confirmation');
+        if (passEl && passConfEl) {
+            if (passConfEl.value === '') {
+                setError(passConfEl, 'Konfirmasi password belum diisi.');
+            } else if (passConfEl.value !== passEl.value) {
+                setError(passConfEl, 'Konfirmasi password tidak cocok dengan password baru.');
+            }
+        }
+
+        // 4. Generator kamar per lantai: sampai >= dari dan maksimal 100 kamar per baris
+        const lantaiRows = new Map();
+        for (const el of Array.from(form.elements)) {
+            const match = (el.name || '').match(/^lantai\[(\d+)\]\[(dari|sampai)\]$/);
+            if (!match) {
+                continue;
+            }
+            const idx = match[1];
+            const kolom = match[2];
+            if (!lantaiRows.has(idx)) {
+                lantaiRows.set(idx, {});
+            }
+            lantaiRows.get(idx)[kolom] = el;
+        }
+        for (const row of lantaiRows.values()) {
+            if (row.dari && row.sampai && row.dari.value !== '' && row.sampai.value !== '') {
+                const dari = Number(row.dari.value);
+                const sampai = Number(row.sampai.value);
+                if (Number.isFinite(dari) && Number.isFinite(sampai)) {
+                    if (sampai < dari) {
+                        setError(row.sampai, 'Nomor kamar akhir tidak boleh lebih kecil dari nomor kamar awal.');
+                    } else if (sampai - dari + 1 > 100) {
+                        setError(row.sampai, 'Maksimal 100 kamar per baris rentang lantai.');
+                    }
+                }
+            }
+        }
+    };
+
+    window.__validasiFormSebelumKonfirmasi = (form) => {
+        if (!(form instanceof HTMLFormElement)) {
+            return true;
+        }
+
+        const daftarElemen = Array.from(form.elements).filter(
+            (el) => el.name && !el.disabled && !['submit', 'button', 'reset', 'hidden'].includes(el.type)
+        );
+
+        for (const el of daftarElemen) {
+            bersihkanErrorField(el);
+        }
+
+        const errorMap = new Map();
+        const catatError = (el, pesan) => {
+            if (el && pesan && !errorMap.has(el)) {
+                errorMap.set(el, pesan);
+            }
+        };
+
+        for (const el of daftarElemen) {
+            if (typeof el.checkValidity === 'function' && !el.checkValidity()) {
+                catatError(el, pesanConstraintHtml(el));
+            }
+        }
+
+        validasiAturanKhusus(form, catatError);
+
+        if (errorMap.size === 0) {
+            return true;
+        }
+
+        let firstInvalid = null;
+        for (const [el, pesan] of errorMap.entries()) {
+            tampilkanErrorField(el, pesan);
+            if (!firstInvalid) {
+                firstInvalid = el;
+            }
+        }
+
+        if (firstInvalid && typeof firstInvalid.focus === 'function') {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus({ preventScroll: true });
+        }
+
+        window.dispatchEvent(
+            new CustomEvent('toast', {
+                detail: {
+                    tipe: 'danger',
+                    pesan: `Periksa kembali isian formulir: ${errorMap.values().next().value}`,
+                },
+            })
+        );
+
+        return false;
+    };
+
+    const bersihkanSaatEdit = (event) => {
+        const el = event.target;
+        if (!(el instanceof HTMLElement) || !('name' in el)) {
+            return;
+        }
+
+        bersihkanErrorField(el);
+
+        if (el.form && el.form.id === 'form-setup-semua' && ['name', 'username', 'password'].includes(el.name)) {
+            for (const namaStaf of ['name', 'username', 'password']) {
+                const target = Array.from(el.form.elements).find((item) => item.name === namaStaf);
+                if (target && target.value.trim() === '') {
+                    bersihkanErrorField(target);
+                }
+            }
+        }
+
+        if (el.form && ['password', 'password_confirmation'].includes(el.name)) {
+            const conf = Array.from(el.form.elements).find((item) => item.name === 'password_confirmation');
+            if (conf) {
+                bersihkanErrorField(conf);
+            }
+        }
+    };
+
+    document.addEventListener('input', bersihkanSaatEdit);
+    document.addEventListener('change', bersihkanSaatEdit);
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        if ((form.method || '').toLowerCase() !== 'post' || form.dataset.bypassDirty === 'true') {
+            return;
+        }
+
+        // Form dengan dialog konfirmasi akan divalidasi oleh initConfirmDialog sebelum dialog muncul
+        if (form.dataset.confirmTitle) {
+            return;
+        }
+
+        if (!window.__validasiFormSebelumKonfirmasi(form)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    });
+}
+
 function initDirtyFormGuard() {
     const dialogDraf = document.getElementById('dialog-draf-keluar');
     const lanjutBtn = document.getElementById('dialog-draf-lanjut');
@@ -463,9 +785,14 @@ function initDirtyFormGuard() {
                 return;
             }
 
-            // Jika yang di-submit adalah form yang dilacak itu sendiri, izinkan lanjut ke dialog konfirmasi simpan
             if (form.matches('form[data-track-dirty]')) {
                 if (!form.dataset.confirmTitle) {
+                    const lolosValidasi = !window.__validasiFormSebelumKonfirmasi || window.__validasiFormSebelumKonfirmasi(form);
+                    if (!lolosValidasi) {
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        return;
+                    }
                     window.__hapusDrafSaatSubmit(form);
                 }
                 return;
@@ -572,7 +899,11 @@ function initConfirmDialog() {
 
         event.preventDefault();
 
-        if (!form.reportValidity()) {
+        if (window.__validasiFormSebelumKonfirmasi) {
+            if (!window.__validasiFormSebelumKonfirmasi(form)) {
+                return;
+            }
+        } else if (!form.reportValidity()) {
             return;
         }
 
@@ -632,5 +963,6 @@ function initConfirmDialog() {
 
 window.Alpine = Alpine;
 Alpine.start();
+initInlineValidation();
 initDirtyFormGuard();
 initConfirmDialog();

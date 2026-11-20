@@ -8,6 +8,7 @@
     'placeholder' => '',
     'autocomplete' => null,
     'hint' => null,
+    'form' => null,
 ])
 
 @php
@@ -18,7 +19,7 @@
     $isPassword = $type === 'password';
 @endphp
 
-<div class="space-y-1.5">
+<div class="space-y-1.5" data-field-wrapper data-field-label="{{ $label }}" data-field-name="{{ $name }}">
     <label for="{{ $fieldId }}" class="block text-sm font-medium text-ink">
         {{ $label }}
         @if ($required)
@@ -34,11 +35,13 @@
                 id="{{ $fieldId }}"
                 name="{{ $name }}"
                 x-bind:type="show ? 'text' : 'password'"
+                data-field-label="{{ $label }}"
+                @if ($form) form="{{ $form }}" @endif
                 @if ($required) required @endif
                 @if ($placeholder !== '') placeholder="{{ $placeholder }}" @endif
                 @if ($autocomplete) autocomplete="{{ $autocomplete }}" @endif
                 aria-invalid="{{ $hasError ? 'true' : 'false' }}"
-                @if ($hasError) aria-describedby="{{ $errorId }}" @endif
+                aria-describedby="{{ $errorId }}"
                 {{ $attributes->merge([
                     'class' => 'block min-h-11 w-full rounded-xl border bg-surface py-2.5 pl-3.5 pr-12 text-sm text-ink placeholder:text-subtle focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20 '.($hasError ? 'border-danger' : 'border-line-strong'),
                 ]) }}
@@ -58,11 +61,13 @@
             name="{{ $name }}"
             type="{{ $type }}"
             value="{{ $currentValue }}"
+            data-field-label="{{ $label }}"
+            @if ($form) form="{{ $form }}" @endif
             @if ($required) required @endif
             @if ($placeholder !== '') placeholder="{{ $placeholder }}" @endif
             @if ($autocomplete) autocomplete="{{ $autocomplete }}" @endif
             aria-invalid="{{ $hasError ? 'true' : 'false' }}"
-            @if ($hasError) aria-describedby="{{ $errorId }}" @endif
+            aria-describedby="{{ $errorId }}"
             {{ $attributes->merge([
                 'class' => 'block min-h-11 w-full rounded-xl border bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-subtle focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20 '.($hasError ? 'border-danger' : 'border-line-strong'),
             ]) }}
@@ -73,7 +78,9 @@
         <p class="text-xs text-muted">{{ $hint }}</p>
     @endif
 
-    @error($name)
-        <p id="{{ $errorId }}" class="text-xs font-medium text-danger">{{ $message }}</p>
-    @enderror
+    <p
+        id="{{ $errorId }}"
+        data-field-error="{{ $name }}"
+        class="text-xs font-medium text-danger {{ $hasError ? '' : 'hidden' }}"
+    >{{ $hasError ? $errors->first($name) : '' }}</p>
 </div>

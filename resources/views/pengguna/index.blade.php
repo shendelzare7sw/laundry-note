@@ -85,8 +85,8 @@
                                 >
                                     @csrf
                                     @method('PATCH')
-                                    <x-field label="Password Baru" name="password" id="password-{{ $pengguna->id }}" type="password" :required="true" />
-                                    <x-field label="Konfirmasi Password" name="password_confirmation" id="password-conf-{{ $pengguna->id }}" type="password" :required="true" />
+                                    <x-field label="Password Baru" name="password" id="password-{{ $pengguna->id }}" type="password" minlength="8" :required="true" />
+                                    <x-field label="Konfirmasi Password" name="password_confirmation" id="password-conf-{{ $pengguna->id }}" type="password" minlength="8" :required="true" />
                                     <div class="flex justify-end gap-2">
                                         <button
                                             type="button"
@@ -128,10 +128,10 @@
             class="space-y-4"
         >
             @csrf
-            <x-field label="Nama Lengkap" name="name" :required="true" placeholder="Nama karyawan" />
-            <x-field label="Username" name="username" :required="true" placeholder="Huruf kecil tanpa spasi" />
+            <x-field label="Nama Lengkap" name="name" maxlength="120" :required="true" placeholder="Nama karyawan" />
+            <x-field label="Username" name="username" minlength="3" maxlength="50" :required="true" placeholder="Huruf kecil tanpa spasi" />
             <x-field label="Email (Opsional)" name="email" type="email" placeholder="Opsional" />
-            <x-field label="Password Awal" name="password" type="password" :required="true" placeholder="Minimal 8 karakter" />
+            <x-field label="Password Awal" name="password" type="password" minlength="8" :required="true" placeholder="Minimal 8 karakter" />
 
             <x-field label="Peran" name="role" :required="true">
                 <select

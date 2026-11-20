@@ -26,4 +26,14 @@ class GantiNomorRequest extends FormRequest
             'no_wa' => ['nullable', 'string', 'max:30'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'no_wa.max' => 'Nomor WhatsApp terlalu panjang (maksimal 30 karakter).',
+        ];
+    }
 }

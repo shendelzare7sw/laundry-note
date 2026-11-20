@@ -29,4 +29,20 @@ class PenyesuaianKuotaRequest extends FormRequest
             'catatan' => ['nullable', 'string', 'max:255'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'bulan.required' => 'Periode bulan belum dipilih.',
+            'bulan.regex' => 'Format periode bulan harus YYYY-MM.',
+            'nominal.required_unless' => 'Nominal tagihan manual belum diisi.',
+            'nominal.integer' => 'Nominal tagihan harus berupa angka bulat rupiah.',
+            'nominal.min' => 'Nominal tagihan tidak boleh bernilai negatif.',
+            'nominal.max' => 'Nominal tagihan maksimal Rp10.000.000.',
+            'catatan.max' => 'Catatan penyesuaian maksimal 255 karakter.',
+        ];
+    }
 }

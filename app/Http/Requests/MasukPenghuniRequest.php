@@ -41,6 +41,35 @@ class MasukPenghuniRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'nama' => 'nama penghuni',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'nama.required' => 'Nama lengkap penghuni belum diisi.',
+            'nama.max' => 'Nama lengkap penghuni maksimal 120 karakter.',
+            'alias.max' => 'Nama panggilan / alias maksimal 120 karakter.',
+            'no_wa.max' => 'Nomor WhatsApp maksimal 30 karakter.',
+            'kamar_id.required' => 'Kamar tujuan belum dipilih.',
+            'kamar_id.integer' => 'Pilihan kamar tujuan tidak valid.',
+            'kamar_id.exists' => 'Kamar yang dipilih tidak valid atau bukan milik properti ini.',
+            'tanggal_masuk.required' => 'Tanggal masuk belum diisi.',
+            'tanggal_masuk.date' => 'Format tanggal masuk tidak valid.',
+            'catatan.max' => 'Catatan penghuni maksimal 500 karakter.',
+        ];
+    }
+
     private function propertiAktif(): ?Properti
     {
         $properti = app()->bound('properti.aktif') ? app('properti.aktif') : null;
