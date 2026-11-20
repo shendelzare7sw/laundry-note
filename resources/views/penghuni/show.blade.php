@@ -292,10 +292,10 @@
                                                 <span class="rounded bg-danger/10 px-2 py-0.5 text-[11px] font-bold text-danger">Bulan lewat kuota</span>
                                             @endif
                                         </div>
-                                        @if ($item->item_nama || $item->catatan)
+                                        @if ($item->item->isNotEmpty() || $item->catatan)
                                             <p class="mt-0.5 text-xs text-muted">
-                                                {{ $item->item_nama ? "Item terpisah: {$item->item_nama}" : '' }}
-                                                {{ $item->item_nama && $item->catatan ? ' · ' : '' }}
+                                                {{ $item->item->isNotEmpty() ? 'Item terpisah: '.$item->ringkasanItem() : '' }}
+                                                {{ $item->item->isNotEmpty() && $item->catatan ? ' · ' : '' }}
                                                 {{ $item->catatan ?? '' }}
                                             </p>
                                         @endif

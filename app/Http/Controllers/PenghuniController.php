@@ -159,7 +159,7 @@ class PenghuniController extends Controller
         $riwayatKuota = $this->kuotaService->riwayatBulanan($penghuni, 6, $kuotaBulanIni['bulan']);
 
         $catatanLaundry = Laundry::query()
-            ->with('kamar')
+            ->with(['kamar', 'item'])
             ->where('properti_id', $propertiAktif->id)
             ->where('penghuni_id', $penghuni->id)
             ->orderByDesc('tanggal')
