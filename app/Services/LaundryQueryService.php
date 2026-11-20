@@ -325,7 +325,7 @@ class LaundryQueryService
      * @param  Collection<int, Laundry>  $daftarBaris
      * @return array<int, array<string, mixed>>
      */
-    private function penandaMerahDanKuotaBaris(Properti $properti, Collection $daftarBaris): array
+    public function penandaMerahDanKuotaBaris(Properti $properti, Collection $daftarBaris): array
     {
         $barisPenghuni = $daftarBaris->filter(
             fn (Laundry $l): bool => $l->jenis === 'penghuni' && $l->penghuni_id !== null
