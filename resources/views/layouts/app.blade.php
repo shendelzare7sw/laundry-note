@@ -26,8 +26,8 @@
 
         {{-- Sidebar Navigasi (Drawer di Mobile, Tetap di Desktop) --}}
         <aside
-            :class="drawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-            class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-maroon-dark text-white transition-transform duration-200 ease-out print:hidden lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:w-68 lg:shrink-0"
+            x-bind:class="{ 'translate-x-0': drawerOpen, '-translate-x-full': !drawerOpen }"
+            class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col bg-maroon-dark text-white transition-transform duration-200 ease-out print:hidden lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:w-68 lg:shrink-0 lg:translate-x-0"
             aria-label="Navigasi samping"
         >
             <div class="flex h-16 items-center gap-3 border-b border-white/10 px-4">
