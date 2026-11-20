@@ -373,7 +373,7 @@
     </div>
 
     @if ($bolehKelolaPenghuni)
-        <x-modal id="modal-ubah-data" judul="Ubah Data & Kontrak Penghuni" lebar="max-w-xl">
+        <x-modal id="modal-ubah-data" judul="Ubah Data Penghuni" lebar="max-w-xl">
             <form
                 method="POST"
                 action="{{ route('penghuni.update', $penghuni) }}"

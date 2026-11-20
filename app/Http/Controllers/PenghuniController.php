@@ -37,7 +37,7 @@ class PenghuniController extends Controller
         $tab = match ($tabInput) {
             'semua', 'booking', 'aktif', 'keluar' => $tabInput,
             'selesai' => 'keluar',
-            default => 'aktif',
+            default => 'semua',
         };
         $cari = trim($request->string('cari')->toString());
         $bulanInput = $request->string('bulan')->toString();

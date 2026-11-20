@@ -37,9 +37,10 @@
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <nav aria-label="Filter status penghuni" class="flex flex-wrap gap-2">
                     @foreach ([
-                        'aktif' => ['label' => 'Aktif', 'jumlah' => $jumlahAktif],
-                        'keluar' => ['label' => 'Keluar', 'jumlah' => $jumlahKeluar],
                         'semua' => ['label' => 'Semua', 'jumlah' => $jumlahSemua],
+                        'booking' => ['label' => 'Booking', 'jumlah' => $jumlahBooking],
+                        'aktif' => ['label' => 'Aktif', 'jumlah' => $jumlahAktif],
+                        'keluar' => ['label' => 'Selesai', 'jumlah' => $jumlahKeluar],
                     ] as $kodeTab => $infoTab)
                         @php $sedangAktif = $tab === $kodeTab; @endphp
                         <a
@@ -57,14 +58,17 @@
                 <form method="GET" action="{{ route('penghuni.index') }}" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="tab" value="{{ $tab }}">
                     <div class="relative min-w-[14rem] flex-1 sm:w-64">
-                        <label for="cari-penghuni" class="sr-only">Cari penghuni</label>
+                        <label for="cari-penghuni" class="sr-only">Cari kamar / penghuni</label>
+                        <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-subtle">
+                            <i class="fas fa-magnifying-glass text-xs" aria-hidden="true"></i>
+                        </span>
                         <input
                             id="cari-penghuni"
                             type="search"
                             name="cari"
                             value="{{ $cari }}"
-                            placeholder="Cari nama, panggilan, kamar, WA..."
-                            class="min-h-11 w-full rounded-xl border border-line-strong bg-sunken/70 px-3.5 text-sm text-ink placeholder:text-subtle focus:border-maroon focus:bg-surface focus:outline-none focus:ring-2 focus:ring-maroon/20"
+                            placeholder="Cari kamar / penghuni"
+                            class="min-h-11 w-full rounded-full border border-line-strong bg-sunken/70 pl-9 pr-3.5 text-sm text-ink placeholder:text-subtle focus:border-maroon focus:bg-surface focus:outline-none focus:ring-2 focus:ring-maroon/20"
                         >
                     </div>
                     <div>
@@ -110,22 +114,27 @@
                     @php
                         $kamarTerkini = $penghuni->penempatanAktif?->kamar ?? $penghuni->penempatan->first()?->kamar;
                         $kuota = $ringkasanKuota->get($penghuni->id);
-                        $statusLencana = $penghuni->status === 'keluar' ? 'keluar' : ($kuota['status'] ?? 'normal');
+                        $statusKontrak = match ($penghuni->status) {
+                            'booking' => 'booking',
+                            'keluar' => 'selesai',
+                            default => 'aktif',
+                        };
+                        $isLewat = ($kuota['status'] ?? 'normal') === 'lewat';
                     @endphp
-                    <x-kartu class="{{ ($kuota['status'] ?? 'normal') === 'lewat' ? 'border-danger/35' : '' }}">
+                    <x-kartu class="{{ $isLewat ? 'border-danger/35' : '' }}">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <span class="inline-flex items-center rounded-lg bg-maroon/10 px-2.5 py-1 text-xs font-bold text-maroon">
-                                        Kamar {{ $kamarTerkini?->nomor ?? '-' }}
-                                    </span>
-                                    <x-lencana :status="$statusLencana" />
+                                    <a href="{{ route('penghuni.show', ['penghuni' => $penghuni, 'bulan' => $rentangBulan['bulan']]) }}" class="text-base font-bold text-ink hover:text-maroon">
+                                        Kamar {{ $kamarTerkini?->nomor ?? '-' }} - {{ $penghuni->nama }}
+                                    </a>
+                                    <x-lencana :status="$statusKontrak" />
+                                    @if ($penghuni->status !== 'keluar' && isset($kuota['status']) && $kuota['status'] !== 'normal')
+                                        <x-lencana :status="$kuota['status']" />
+                                    @endif
                                 </div>
-                                <a href="{{ route('penghuni.show', ['penghuni' => $penghuni, 'bulan' => $rentangBulan['bulan']]) }}" class="mt-2 block text-base font-bold text-ink hover:text-maroon">
-                                    {{ $penghuni->nama }}
-                                </a>
                                 @if ($penghuni->alias)
-                                    <p class="text-xs text-muted">Panggilan: {{ $penghuni->alias }}</p>
+                                    <p class="mt-0.5 text-xs text-muted">Panggilan: {{ $penghuni->alias }}</p>
                                 @endif
                             </div>
 
@@ -213,7 +222,19 @@
                                         </div>
                                     </td>
                                     <td class="whitespace-nowrap px-4 py-3 align-middle">
-                                        <x-lencana :status="$statusLencana" />
+                                        @php
+                                            $statusKontrakRow = match ($penghuni->status) {
+                                                'booking' => 'booking',
+                                                'keluar' => 'selesai',
+                                                default => 'aktif',
+                                            };
+                                        @endphp
+                                        <x-lencana :status="$statusKontrakRow" />
+                                        @if ($penghuni->status !== 'keluar' && isset($kuota['status']) && $kuota['status'] !== 'normal')
+                                            <div class="mt-1">
+                                                <x-lencana :status="$kuota['status']" />
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-4 py-3 align-middle">
                                         @if ($kuota)
