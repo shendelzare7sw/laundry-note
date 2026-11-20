@@ -66,7 +66,13 @@ class LaundryPolicy
 
     private function masihDalamBatasPenjaga(User $user, Laundry $laundry): bool
     {
-        if ($laundry->dicatat_oleh !== $user->id || $laundry->created_at === null) {
+        if ($laundry->created_at === null) {
+            return false;
+        }
+
+        $bolehCatatanLain = $this->pengaturanService->penjagaBolehUbahCatatanLain($laundry->properti_id);
+
+        if ($laundry->dicatat_oleh !== $user->id && ! $bolehCatatanLain) {
             return false;
         }
 

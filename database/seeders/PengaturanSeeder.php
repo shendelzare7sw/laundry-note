@@ -29,6 +29,7 @@ class PengaturanSeeder extends Seeder
             'kuota_prorata_bulan_masuk' => '0',
             'jam_edit_penjaga' => '24',
             'penjaga_kelola_kontrak' => '0',
+            'penjaga_ubah_catatan_lain' => '0',
             'template_wa_tagihan' => implode("\n", [
                 'Halo *{nama}* (Kamar {kamar}),',
                 '',

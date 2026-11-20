@@ -33,8 +33,8 @@ class SeederTest extends TestCase
         $this->assertDatabaseHas('kamar', ['properti_id' => $properti->id, 'nomor' => '402', 'lantai' => 4]);
 
         // Pengaturan global + pengaturan Dbata Residence
-        $this->assertSame(14, Pengaturan::query()->whereNull('properti_id')->count());
-        $this->assertSame(14, Pengaturan::query()->untukProperti($properti)->count());
+        $this->assertSame(15, Pengaturan::query()->whereNull('properti_id')->count());
+        $this->assertSame(15, Pengaturan::query()->untukProperti($properti)->count());
         $this->assertDatabaseHas('pengaturan', [
             'properti_id' => $properti->id,
             'kunci' => 'tarif_per_kg',
