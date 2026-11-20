@@ -164,6 +164,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - **Node.js Laragon:** `node` / `npm` tidak berada di default `$env:PATH`. Selalu awali perintah Node/Vite dengan:
   `$env:PATH = "C:\laragon\bin\nodejs\node-v20.19.1-win-x64;" + $env:PATH;`
 - **Mobile-first:** tulis class CSS dasar untuk layar HP (target sentuh ≥ 44 px, navigasi bottom bar), lalu perluas ke desktop dengan prefix `md:` / `lg:`.
+- **Konfirmasi & kebersihan View Page Source:** setiap aksi sensitif (logout, hapus, ubah status aktif, pindah kamar/keluar, perubahan pengaturan, dan update data kritis) wajib memakai atribut `data-confirm-title`, `data-confirm-message`, `data-confirm-label`, dan `data-confirm-variant` yang ditangani terpusat oleh `<x-dialog-konfirmasi />` dan `resources/js/app.js`. DILARANG menulis `<script>` atau `<style>` inline custom di Blade.
 
 ## 3. Arsitektur & Aturan Domain Wajib
 - **Controller tipis:** validasi di `FormRequest`, hak akses di `Policy`, logika bisnis di `app/Services/`.

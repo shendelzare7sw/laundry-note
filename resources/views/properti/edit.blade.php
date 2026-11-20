@@ -26,7 +26,15 @@
         </div>
 
         <x-kartu>
-            <form method="POST" action="{{ route('properti.update', $properti) }}" class="grid gap-4 md:grid-cols-2">
+            <form
+                method="POST"
+                action="{{ route('properti.update', $properti) }}"
+                data-confirm-title="Simpan Perubahan Properti?"
+                data-confirm-message="Perubahan data properti atau status aktif akan memengaruhi akses staf properti ini."
+                data-confirm-label="Ya, Simpan"
+                data-confirm-variant="maroon"
+                class="grid gap-4 md:grid-cols-2"
+            >
                 @csrf
                 @method('PUT')
 

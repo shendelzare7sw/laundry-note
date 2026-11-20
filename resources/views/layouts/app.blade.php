@@ -243,7 +243,15 @@
                                     <span>Menu Lainnya</span>
                                 </a>
 
-                                <form method="POST" action="{{ route('logout') }}" class="mt-1 border-t border-line pt-1">
+                                <form
+                                    method="POST"
+                                    action="{{ route('logout') }}"
+                                    data-confirm-title="Keluar dari Laundry-Kos?"
+                                    data-confirm-message="Sesi login Anda akan diakhiri dan Anda perlu masuk kembali untuk mengakses aplikasi."
+                                    data-confirm-label="Ya, Keluar"
+                                    data-confirm-variant="danger"
+                                    class="mt-1 border-t border-line pt-1"
+                                >
                                     @csrf
                                     <button
                                         type="submit"
@@ -271,5 +279,6 @@
     </div>
 
     <x-toast />
+    <x-dialog-konfirmasi />
 </body>
 </html>

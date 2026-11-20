@@ -120,5 +120,117 @@ document.addEventListener('click', (event) => {
     }
 });
 
+function initConfirmDialog() {
+    const dialog = document.getElementById('dialog-konfirmasi');
+    const judulEl = document.getElementById('dialog-konfirmasi-judul');
+    const pesanEl = document.getElementById('dialog-konfirmasi-pesan');
+    const wadahIkonEl = document.getElementById('dialog-konfirmasi-wadah-ikon');
+    const ikonEl = document.getElementById('dialog-konfirmasi-ikon');
+    const batalBtn = document.getElementById('dialog-konfirmasi-batal');
+    const yaBtn = document.getElementById('dialog-konfirmasi-ya');
+
+    if (!dialog || !judulEl || !pesanEl || !batalBtn || !yaBtn) {
+        return;
+    }
+
+    let pendingForm = null;
+
+    const tutupDialog = () => {
+        pendingForm = null;
+        if (dialog.open) {
+            dialog.close();
+        }
+    };
+
+    const aturGaya = (variant) => {
+        const kelasYa = {
+            danger: 'inline-flex min-h-11 items-center justify-center rounded-xl bg-danger px-4 text-sm font-bold text-white hover:bg-danger/90 focus-visible:outline-2 focus-visible:outline-danger',
+            gold: 'inline-flex min-h-11 items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold text-white hover:bg-gold-bright focus-visible:outline-2 focus-visible:outline-gold',
+            maroon: 'inline-flex min-h-11 items-center justify-center rounded-xl bg-maroon px-4 text-sm font-bold text-white hover:bg-maroon-cerah focus-visible:outline-2 focus-visible:outline-maroon',
+        };
+
+        const kelasIkon = {
+            danger: 'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-danger/10 text-danger',
+            gold: 'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gold-container text-on-gold',
+            maroon: 'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-maroon/10 text-maroon',
+        };
+
+        const ikonNama = {
+            danger: 'fas fa-triangle-exclamation text-lg',
+            gold: 'fas fa-circle-check text-lg',
+            maroon: 'fas fa-circle-question text-lg',
+        };
+
+        const v = kelasYa[variant] ? variant : 'maroon';
+        yaBtn.className = kelasYa[v];
+        if (wadahIkonEl) {
+            wadahIkonEl.className = kelasIkon[v];
+        }
+        if (ikonEl) {
+            ikonEl.className = ikonNama[v];
+        }
+    };
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const title = form.dataset.confirmTitle;
+        if (!title || form.dataset.confirmed === 'true') {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (!form.reportValidity()) {
+            return;
+        }
+
+        // Jika form berada di dalam modal <dialog> lain (mis. modal reset password), tutup dulu agar top-layer rapi.
+        const parentModal = form.closest('dialog');
+        if (parentModal && parentModal !== dialog && parentModal.open) {
+            parentModal.close();
+        }
+
+        pendingForm = form;
+        judulEl.textContent = title;
+        pesanEl.textContent = form.dataset.confirmMessage || 'Apakah Anda yakin ingin melanjutkan tindakan ini?';
+        yaBtn.textContent = form.dataset.confirmLabel || 'Ya, Lanjutkan';
+        aturGaya(form.dataset.confirmVariant || 'maroon');
+
+        dialog.showModal();
+        batalBtn.focus();
+    });
+
+    batalBtn.addEventListener('click', tutupDialog);
+
+    dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) {
+            tutupDialog();
+        }
+    });
+
+    dialog.addEventListener('cancel', () => {
+        pendingForm = null;
+    });
+
+    yaBtn.addEventListener('click', () => {
+        if (!pendingForm) {
+            tutupDialog();
+            return;
+        }
+        const formToSubmit = pendingForm;
+        pendingForm = null;
+        formToSubmit.dataset.confirmed = 'true';
+        if (dialog.open) {
+            dialog.close();
+        }
+        HTMLFormElement.prototype.submit.call(formToSubmit);
+    });
+}
+
 window.Alpine = Alpine;
 Alpine.start();
+initConfirmDialog();

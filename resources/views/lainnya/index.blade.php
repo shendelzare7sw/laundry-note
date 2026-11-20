@@ -35,7 +35,14 @@
                     <div class="text-xs text-muted">{{ auth()->user()->username }} · {{ auth()->user()->role->label() }}</div>
                 </div>
 
-                <form method="POST" action="{{ route('logout') }}">
+                <form
+                    method="POST"
+                    action="{{ route('logout') }}"
+                    data-confirm-title="Keluar dari Laundry-Kos?"
+                    data-confirm-message="Sesi login Anda akan diakhiri dan Anda perlu masuk kembali untuk mengakses aplikasi."
+                    data-confirm-label="Ya, Keluar"
+                    data-confirm-variant="danger"
+                >
                     @csrf
                     <button
                         type="submit"

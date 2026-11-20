@@ -48,7 +48,15 @@
 
         {{-- Langkah 1: Data Properti --}}
         <x-kartu judul="Langkah 1 · Data Properti" subjudul="Informasi dasar dan judul yang tampil di laporan PDF/cetak">
-            <form method="POST" action="{{ route('properti.update', $properti) }}" class="grid gap-4 sm:grid-cols-2">
+            <form
+                method="POST"
+                action="{{ route('properti.update', $properti) }}"
+                data-confirm-title="Simpan Data Properti?"
+                data-confirm-message="Nama properti dan judul laporan akan diperbarui."
+                data-confirm-label="Ya, Simpan"
+                data-confirm-variant="maroon"
+                class="grid gap-4 sm:grid-cols-2"
+            >
                 @csrf
                 @method('PUT')
                 <x-field label="Nama Properti" name="nama" :value="$properti->nama" :required="true" />
@@ -159,7 +167,15 @@
 
         {{-- Langkah 3: Aturan Laundry --}}
         <x-kartu judul="Langkah 3 · Aturan Laundry Properti" subjudul="Disalin dari nilai bawaan sistem dan dapat disesuaikan per properti">
-            <form method="POST" action="{{ route('properti.setup.aturan', $properti) }}" class="grid gap-4 sm:grid-cols-3">
+            <form
+                method="POST"
+                action="{{ route('properti.setup.aturan', $properti) }}"
+                data-confirm-title="Simpan Aturan Laundry Properti?"
+                data-confirm-message="Perubahan tarif, kuota, toleransi, atau izin kontrak penjaga akan berlaku mulai hari ini."
+                data-confirm-label="Ya, Simpan Aturan"
+                data-confirm-variant="maroon"
+                class="grid gap-4 sm:grid-cols-3"
+            >
                 @csrf
                 <x-field label="Tarif per Kg (Rp)" name="tarif_per_kg" type="number" :value="$aturanSaatIni['tarif_per_kg'] ?? 8000" :required="true" />
                 <x-field label="Minimum Berat (Kg)" name="min_kg" type="number" step="0.1" :value="$aturanSaatIni['min_kg'] ?? 2" :required="true" />
@@ -264,7 +280,14 @@
                     </div>
 
                     @if ($properti->status !== 'aktif')
-                        <form method="POST" action="{{ route('properti.setup.aktifkan', $properti) }}">
+                        <form
+                            method="POST"
+                            action="{{ route('properti.setup.aktifkan', $properti) }}"
+                            data-confirm-title="Aktifkan Properti?"
+                            data-confirm-message="Properti {{ $properti->nama }} akan diaktifkan dan staf yang terdaftar dapat mulai menggunakannya."
+                            data-confirm-label="Ya, Aktifkan"
+                            data-confirm-variant="gold"
+                        >
                             @csrf
                             <button
                                 type="submit"

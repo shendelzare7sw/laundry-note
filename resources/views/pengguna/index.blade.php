@@ -46,7 +46,14 @@
 
                         @can('update', $pengguna)
                             <div class="flex flex-wrap gap-2">
-                                <form method="POST" action="{{ route('pengguna.toggle-aktif', $pengguna) }}">
+                                <form
+                                    method="POST"
+                                    action="{{ route('pengguna.toggle-aktif', $pengguna) }}"
+                                    data-confirm-title="{{ $pengguna->aktif ? 'Nonaktifkan Akun Staf?' : 'Aktifkan Kembali Akun Staf?' }}"
+                                    data-confirm-message="{{ $pengguna->aktif ? 'Akun ' . $pengguna->username . ' akan dinonaktifkan dan seluruh sesi loginnya dicabut.' : 'Akun ' . $pengguna->username . ' akan diaktifkan kembali agar dapat login.' }}"
+                                    data-confirm-label="{{ $pengguna->aktif ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan' }}"
+                                    data-confirm-variant="{{ $pengguna->aktif ? 'danger' : 'maroon' }}"
+                                >
                                     @csrf
                                     @method('PATCH')
                                     <button
@@ -67,7 +74,15 @@
                             </div>
 
                             <x-modal id="modal-reset-{{ $pengguna->id }}" judul="Reset Password: {{ $pengguna->username }}">
-                                <form method="POST" action="{{ route('pengguna.reset-password', $pengguna) }}" class="space-y-4">
+                                <form
+                                    method="POST"
+                                    action="{{ route('pengguna.reset-password', $pengguna) }}"
+                                    data-confirm-title="Simpan Password Baru?"
+                                    data-confirm-message="Password untuk akun {{ $pengguna->username }} akan diganti dan sesi login aktifnya akan dicabut."
+                                    data-confirm-label="Ya, Ganti Password"
+                                    data-confirm-variant="maroon"
+                                    class="space-y-4"
+                                >
                                     @csrf
                                     @method('PATCH')
                                     <x-field label="Password Baru" name="password" id="password-{{ $pengguna->id }}" type="password" :required="true" />

@@ -176,6 +176,24 @@ class PeranDanPropertiTest extends TestCase
             'deskripsi' => 'Cozy Rooms Affordable Price',
             'status' => 'aktif',
         ]);
+
+        // Dialog konfirmasi global tersedia dan form sensitif memiliki atribut data-confirm-title
+        $this->actingAs($owner)
+            ->withSession(['properti_aktif_id' => $propertiA->id])
+            ->get(route('beranda'))
+            ->assertOk()
+            ->assertSee('id="dialog-konfirmasi"', false)
+            ->assertSee('data-confirm-title="Keluar dari Laundry-Kos?"', false);
+
+        $this->actingAs($owner)
+            ->get(route('pengguna.index'))
+            ->assertOk()
+            ->assertSee('data-confirm-title=', false);
+
+        $this->actingAs($owner)
+            ->get(route('properti.edit', $propertiA))
+            ->assertOk()
+            ->assertSee('data-confirm-title="Simpan Perubahan Properti?"', false);
     }
 
     public function test_indeks_unik_menolak_admin_aktif_kedua_di_properti_yang_sama(): void
