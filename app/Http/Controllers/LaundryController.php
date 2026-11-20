@@ -13,6 +13,7 @@ use App\Services\HargaService;
 use App\Services\LaundryQueryService;
 use App\Services\LaundryService;
 use App\Services\PengaturanService;
+use App\Support\Tampil;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -199,12 +200,14 @@ class LaundryController extends Controller
         $propertiAktif = $this->propertiAktif();
         Gate::authorize('lihatTerhapus', [Laundry::class, $propertiAktif]);
 
-        $daftarTerhapus = Laundry::onlyTrashed()
-            ->where('properti_id', $propertiAktif->id)
-            ->with(['penghuni', 'kamar', 'pencatat', 'item'])
-            ->orderByDesc('deleted_at')
-            ->orderByDesc('id')
-            ->paginate(20);
+        $daftarTerhapus = Tampil::ambil(
+            Laundry::onlyTrashed()
+                ->where('properti_id', $propertiAktif->id)
+                ->with(['penghuni', 'kamar', 'pencatat', 'item'])
+                ->orderByDesc('deleted_at')
+                ->orderByDesc('id'),
+            15,
+        );
 
         return view('laundry.terhapus', [
             'propertiAktif' => $propertiAktif,

@@ -32,7 +32,7 @@
                         };
                     @endphp
 
-                    <article class="rounded-2xl border border-line bg-surface p-4 shadow-xs">
+                    <article id="m-{{ $loop->iteration }}" class="scroll-mt-20 rounded-2xl border border-line bg-surface p-4 shadow-xs">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0 flex-1 space-y-1">
                                 <div class="flex flex-wrap items-center gap-2">
@@ -79,11 +79,7 @@
                 @endforeach
             </div>
 
-            @if ($daftarTerhapus->hasPages())
-                <div class="pt-2">
-                    {{ $daftarTerhapus->links() }}
-                </div>
-            @endif
+            <x-muat-lagi :items="$daftarTerhapus" :langkah="15" :satu-daftar="true" />
         @endif
     </div>
 </x-app-layout>

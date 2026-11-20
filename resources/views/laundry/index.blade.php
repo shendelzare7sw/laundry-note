@@ -251,7 +251,10 @@
                         $bolehTetapkan = $baris->jenis === 'tanpa_nama' && auth()->user()->can('tetapkanPemilik', $baris);
                     @endphp
 
-                    <article class="rounded-2xl border p-4 shadow-xs transition {{ $isLewat ? 'border-danger/40 border-l-4 border-l-danger bg-danger/5' : 'border-line bg-surface' }}">
+                    <article
+                        id="m-{{ $loop->iteration }}"
+                        class="scroll-mt-20 rounded-2xl border p-4 shadow-xs transition {{ $isLewat ? 'border-danger/40 border-l-4 border-l-danger bg-danger/5' : 'border-line bg-surface' }} {{ $bolehUbah ? 'hover:border-maroon/40' : '' }}"
+                    >
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="flex min-w-0 flex-1 items-start gap-3">
                                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl {{ $isLewat ? 'bg-danger/15 text-danger' : ($baris->jenis === 'gedung' ? 'bg-sunken text-ink' : ($baris->jenis === 'tanpa_nama' ? 'bg-gold-container text-on-gold' : 'bg-maroon/10 text-maroon')) }}">
@@ -260,9 +263,18 @@
 
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <h2 class="text-sm font-bold text-ink sm:text-base">
-                                            {{ $judulBaris }}@if ($beratTampil !== null) · {{ $beratTampil }} kg @endif
-                                        </h2>
+                                        @if ($bolehUbah)
+                                            <a
+                                                href="{{ route('laundry.edit', $baris) }}"
+                                                class="text-sm font-bold text-ink hover:text-maroon hover:underline sm:text-base"
+                                            >
+                                                {{ $judulBaris }}@if ($beratTampil !== null) · {{ $beratTampil }} kg @endif
+                                            </a>
+                                        @else
+                                            <h2 class="text-sm font-bold text-ink sm:text-base">
+                                                {{ $judulBaris }}@if ($beratTampil !== null) · {{ $beratTampil }} kg @endif
+                                            </h2>
+                                        @endif
 
                                         @if ($isLewat)
                                             <x-lencana status="lewat">
@@ -392,6 +404,11 @@
                                             </form>
                                         @endif
                                     </div>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 rounded-xl border border-line bg-sunken/70 px-3 py-2 text-xs font-medium text-muted">
+                                        <i class="fas fa-lock text-[11px]" aria-hidden="true"></i>
+                                        <span>{{ $baris->dicatat_oleh !== auth()->id() ? 'Terkunci · dicatat pengguna lain' : 'Terkunci · lewat batas jam edit' }}</span>
+                                    </span>
                                 @endif
                             </div>
                         </div>
@@ -399,11 +416,7 @@
                 @endforeach
             </div>
 
-            @if ($daftar->hasPages())
-                <div class="pt-2">
-                    {{ $daftar->withQueryString()->links() }}
-                </div>
-            @endif
+            <x-muat-lagi :items="$daftar" :langkah="20" :satu-daftar="true" />
         @endif
     </div>
 

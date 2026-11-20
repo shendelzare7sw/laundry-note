@@ -7,6 +7,7 @@ use App\Models\LaundryItem;
 use App\Models\Penempatan;
 use App\Models\Penghuni;
 use App\Models\Properti;
+use App\Support\Tampil;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -134,11 +135,13 @@ class LaundryQueryService
                 });
             });
 
-        $daftar = (clone $base)
-            ->with(['penghuni', 'kamar', 'pencatat', 'item'])
-            ->orderByDesc('tanggal')
-            ->orderByDesc('id')
-            ->paginate($perHalaman);
+        $daftar = Tampil::ambil(
+            (clone $base)
+                ->with(['penghuni', 'kamar', 'pencatat', 'item'])
+                ->orderByDesc('tanggal')
+                ->orderByDesc('id'),
+            $perHalaman,
+        );
 
         $ringkasan = $this->hitungRingkasan($properti, $base);
         $metaBaris = $this->penandaMerahDanKuotaBaris($properti, $daftar->getCollection());
