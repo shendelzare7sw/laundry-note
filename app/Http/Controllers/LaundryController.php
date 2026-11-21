@@ -286,7 +286,7 @@ class LaundryController extends Controller
         $beratRaw = trim((string) $request->query('berat_kg', ''));
         $beratValid = preg_match('/^\d+(?:[.,]\d{1,2})?$/', $beratRaw) === 1 ? $beratRaw : null;
 
-        $pratinjau = $this->laundryService->pratinjau($propertiAktif, $tanggal, $penghuni, $beratValid, $kecuali);
+        $pratinjau = $this->laundryService->pratinjau($propertiAktif, $tanggal, $penghuni, $beratValid, $kecuali, $request->user());
 
         return response()->json([
             ...$pratinjau,

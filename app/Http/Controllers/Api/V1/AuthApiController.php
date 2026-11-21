@@ -10,10 +10,13 @@ use App\Models\Pengaturan;
 use App\Models\Penghuni;
 use App\Models\Properti;
 use App\Models\User;
+use App\Support\PesanAksesAkun;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthApiController extends Controller
@@ -29,36 +32,72 @@ class AuthApiController extends Controller
             'password.required' => 'Password wajib diisi.',
         ]);
 
+        $username = Str::lower(trim($data['username']));
+        $throttleKey = Str::transliterate($username.'|'.$request->ip());
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $detik = RateLimiter::availableIn($throttleKey);
+
+            return response()->json([
+                'message' => "Terlalu banyak percobaan login. Silakan coba lagi dalam {$detik} detik.",
+                'code' => 'TOO_MANY_REQUESTS',
+                'request_id' => (string) $request->attributes->get('request_id', ''),
+            ], 429);
+        }
+
         /** @var User|null $user */
         $user = User::query()
             ->with('properti')
-            ->where('username', trim($data['username']))
+            ->where('username', $username)
             ->first();
 
         if ($user === null || ! Hash::check($data['password'], $user->password)) {
+            RateLimiter::hit($throttleKey);
+
             throw ValidationException::withMessages([
                 'username' => ['Username atau password salah.'],
             ]);
         }
 
         if (! $user->aktif) {
+            RateLimiter::hit($throttleKey);
+
             return response()->json([
-                'message' => 'Akun Anda sedang dinonaktifkan. Hubungi pengelola.',
+                'message' => PesanAksesAkun::akunNonaktif($user),
                 'code' => 'AKUN_NONAKTIF',
                 'request_id' => (string) $request->attributes->get('request_id', ''),
             ], 403);
         }
 
-        if ($user->role->isStafProperti() && ($user->properti === null || $user->properti->status !== 'aktif')) {
-            return response()->json([
-                'message' => 'Properti penempatan Anda sedang tidak aktif.',
-                'code' => 'PROPERTI_TIDAK_AKTIF',
-                'request_id' => (string) $request->attributes->get('request_id', ''),
-            ], 403);
+        if ($user->role->isStafProperti()) {
+            if ($user->properti === null) {
+                RateLimiter::hit($throttleKey);
+
+                return response()->json([
+                    'message' => PesanAksesAkun::propertiTidakTerikat(),
+                    'code' => 'PROPERTI_TIDAK_TERIKAT',
+                    'request_id' => (string) $request->attributes->get('request_id', ''),
+                ], 403);
+            }
+
+            if ($user->properti->status !== 'aktif') {
+                RateLimiter::hit($throttleKey);
+
+                return response()->json([
+                    'message' => PesanAksesAkun::propertiTidakAktif(),
+                    'code' => 'PROPERTI_TIDAK_AKTIF',
+                    'request_id' => (string) $request->attributes->get('request_id', ''),
+                ], 403);
+            }
         }
+
+        RateLimiter::clear($throttleKey);
 
         $namaPerangkat = trim((string) ($data['device_name'] ?? 'android'));
         $token = $user->createToken($namaPerangkat !== '' ? $namaPerangkat : 'android')->plainTextToken;
+
+        // Pastikan $request->user() tersedia saat Resource (mis. PropertiResource::boleh_ubah) di-resolve pada endpoint login
+        $request->setUserResolver(static fn (): User => $user);
 
         $propertiList = $this->daftarPropertiAkses($user);
         $propertiAktif = $this->resolvePropertiAwal($user, $propertiList);
@@ -92,10 +131,32 @@ class AuthApiController extends Controller
             $user->currentAccessToken()?->delete();
 
             return response()->json([
-                'message' => 'Akun Anda sedang dinonaktifkan. Hubungi pengelola.',
+                'message' => PesanAksesAkun::akunNonaktif($user),
                 'code' => 'AKUN_NONAKTIF',
                 'request_id' => (string) $request->attributes->get('request_id', ''),
             ], 403);
+        }
+
+        if ($user->role->isStafProperti()) {
+            if ($user->properti === null) {
+                $user->currentAccessToken()?->delete();
+
+                return response()->json([
+                    'message' => PesanAksesAkun::propertiTidakTerikat(),
+                    'code' => 'PROPERTI_TIDAK_TERIKAT',
+                    'request_id' => (string) $request->attributes->get('request_id', ''),
+                ], 403);
+            }
+
+            if ($user->properti->status !== 'aktif') {
+                $user->currentAccessToken()?->delete();
+
+                return response()->json([
+                    'message' => PesanAksesAkun::propertiTidakAktif(),
+                    'code' => 'PROPERTI_TIDAK_AKTIF',
+                    'request_id' => (string) $request->attributes->get('request_id', ''),
+                ], 403);
+            }
         }
 
         $propertiList = $this->daftarPropertiAkses($user);
@@ -118,11 +179,11 @@ class AuthApiController extends Controller
     private function daftarPropertiAkses(User $user): Collection
     {
         if ($user->isDevAdmin()) {
-            return Properti::query()->withCount(['kamar', 'penghuniAktif'])->orderBy('id')->get();
+            return Properti::query()->with('adminAktif')->withCount(['kamar', 'penghuniAktif'])->orderBy('id')->get();
         }
 
         if ($user->isOwner()) {
-            return $user->propertiDimiliki()->withCount(['kamar', 'penghuniAktif'])->orderBy('id')->get();
+            return $user->propertiDimiliki()->with('adminAktif')->withCount(['kamar', 'penghuniAktif'])->orderBy('id')->get();
         }
 
         if ($user->properti_id === null) {
@@ -131,6 +192,7 @@ class AuthApiController extends Controller
 
         return Properti::query()
             ->whereKey($user->properti_id)
+            ->with('adminAktif')
             ->withCount(['kamar', 'penghuniAktif'])
             ->get();
     }

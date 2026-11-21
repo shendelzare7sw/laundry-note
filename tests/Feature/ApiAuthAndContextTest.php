@@ -147,15 +147,14 @@ class ApiAuthAndContextTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.0.nomor', '101');
 
-        // Penjaga tidak boleh ubah pengaturan, tapi boleh baca /pengaturan
+        // Penjaga tidak boleh membaca maupun mengubah pengaturan (sama dengan Web)
         app('auth')->forgetGuards();
         $penjagaToken = $this->penjagaA->createToken('android')->plainTextToken;
 
         $this->withToken($penjagaToken)
             ->getJson('/api/v1/pengaturan')
-            ->assertOk()
-            ->assertJsonPath('boleh_ubah', false)
-            ->assertJsonPath('aturan.tarif_per_kg', 8000);
+            ->assertForbidden()
+            ->assertJsonPath('code', 'FORBIDDEN');
 
         $this->withToken($penjagaToken)
             ->putJson('/api/v1/pengaturan/izin-penjaga', [
@@ -185,5 +184,94 @@ class ApiAuthAndContextTest extends TestCase
             ->assertOk()
             ->assertJsonPath('izin_penjaga.jam_edit_penjaga', null)
             ->assertJsonPath('izin_penjaga.penjaga_ubah_catatan_lain', true);
+    }
+
+    public function test_keamanan_akun_nonaktif_pencabutan_token_dan_perlindungan_dev_admin(): void
+    {
+        $devAdmin = User::factory()->create([
+            'username' => 'dev_utama',
+            'password' => 'rahasia123',
+            'role' => Peran::DevAdmin,
+            'aktif' => true,
+        ]);
+
+        // 1. Penjaga, Admin, dan Owner yang dinonaktifkan tidak bisa login sama sekali (403 AKUN_NONAKTIF)
+        $penjagaToken = $this->penjagaA->createToken('hp-penjaga')->plainTextToken;
+        $ownerToken = $this->owner->createToken('hp-owner')->plainTextToken;
+
+        // Admin menonaktifkan Penjaga via API -> token Sanctum Penjaga langsung terhapus
+        $adminToken = $this->adminA->createToken('hp-admin')->plainTextToken;
+        $this->withToken($adminToken)
+            ->patchJson("/api/v1/pengguna/{$this->penjagaA->id}/status")
+            ->assertOk();
+
+        $this->assertDatabaseMissing('personal_access_tokens', ['tokenable_id' => $this->penjagaA->id]);
+
+        // Penjaga yang sudah nonaktif mencoba login lagi -> ditolak 403 AKUN_NONAKTIF tanpa token baru
+        app('auth')->forgetGuards();
+        $this->postJson('/api/v1/auth/login', [
+            'username' => 'PENJAGA_API', // juga menguji case-insensitive username
+            'password' => 'rahasia123',
+        ])->assertForbidden()
+            ->assertJsonPath('code', 'AKUN_NONAKTIF')
+            ->assertJsonMissingPath('token');
+
+        // Request dengan token lama Penjaga -> ditolak 401 UNAUTHORIZED berbahasa Indonesia
+        app('auth')->forgetGuards();
+        $this->withToken($penjagaToken)
+            ->getJson('/api/v1/beranda')
+            ->assertUnauthorized()
+            ->assertJsonPath('code', 'UNAUTHORIZED');
+
+        // 2. Jika akun Owner dinonaktifkan langsung (mis. token masih ada di DB), middleware akun.aktif.api
+        // langsung memblokir semua endpoint (/properti, /pengguna, /me) dengan 403 AKUN_NONAKTIF & hapus token
+        $this->owner->update(['aktif' => false]);
+        app('auth')->forgetGuards();
+        $this->withToken($ownerToken)
+            ->getJson('/api/v1/properti')
+            ->assertForbidden()
+            ->assertJsonPath('code', 'AKUN_NONAKTIF');
+        $this->assertDatabaseMissing('personal_access_tokens', ['tokenable_id' => $this->owner->id]);
+
+        // Owner nonaktif tidak bisa login lagi
+        app('auth')->forgetGuards();
+        $this->postJson('/api/v1/auth/login', [
+            'username' => 'owner_api',
+            'password' => 'rahasia123',
+        ])->assertForbidden()
+            ->assertJsonPath('code', 'AKUN_NONAKTIF');
+
+        // 3. Jika properti diubah ke draf/arsip oleh DevAdmin, token staf properti dicabut & staf tidak bisa login,
+        // namun DevAdmin tetap bisa login dan mengakses properti
+        $this->owner->update(['aktif' => true]);
+        app('auth')->forgetGuards();
+        $devToken = $devAdmin->createToken('hp-dev')->plainTextToken;
+
+        $this->withToken($devToken)
+            ->putJson("/api/v1/properti/{$this->propertiA->id}", [
+                'nama' => $this->propertiA->nama,
+                'nama_properti_laporan' => $this->propertiA->nama_properti_laporan,
+                'status' => 'arsip',
+            ])
+            ->assertOk();
+
+        // Token admin propertiA harus sudah tercabut
+        $this->assertDatabaseMissing('personal_access_tokens', ['tokenable_id' => $this->adminA->id]);
+
+        // Admin propertiA tidak bisa login selama properti arsip
+        app('auth')->forgetGuards();
+        $this->postJson('/api/v1/auth/login', [
+            'username' => 'admin_api',
+            'password' => 'rahasia123',
+        ])->assertForbidden()
+            ->assertJsonPath('code', 'PROPERTI_TIDAK_AKTIF');
+
+        // DevAdmin tetap bisa login kapan pun
+        app('auth')->forgetGuards();
+        $this->postJson('/api/v1/auth/login', [
+            'username' => 'dev_utama',
+            'password' => 'rahasia123',
+        ])->assertOk()
+            ->assertJsonPath('user.role', 'dev_admin');
     }
 }

@@ -170,6 +170,7 @@ document.addEventListener('alpine:init', () => {
         jenis: awal.jenis ?? 'penghuni',
         tanggal: awal.tanggal ?? '',
         penghuniId: awal.penghuniId ? String(awal.penghuniId) : '',
+        namaTanpaNama: String(awal.namaTanpaNama ?? ''),
         teksCombobox: '',
         sedangMengetikCombobox: false,
         comboboxTerbuka: false,
@@ -456,6 +457,9 @@ document.addEventListener('alpine:init', () => {
             if ('penghuni_id' in data) {
                 this.penghuniId = data.penghuni_id ? String(data.penghuni_id) : '';
                 this.sinkronTeksCombobox();
+            }
+            if ('nama_tanpa_nama' in data) {
+                this.namaTanpaNama = String(data.nama_tanpa_nama ?? '');
             }
             if ('berat_kg' in data) {
                 this.beratKg = String(data.berat_kg ?? '');

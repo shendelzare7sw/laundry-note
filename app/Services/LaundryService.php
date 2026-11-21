@@ -180,6 +180,7 @@ class LaundryService
                 'jenis' => 'penghuni',
                 'penghuni_id' => $penghuni->id,
                 'kamar_id' => $penempatan->kamar_id,
+                'nama_tanpa_nama' => null,
             ])->save();
 
             $this->auditService->catat(
@@ -271,7 +272,8 @@ class LaundryService
         string $tanggal,
         ?Penghuni $penghuni,
         ?string $beratKg,
-        ?Laundry $kecuali = null
+        ?Laundry $kecuali = null,
+        ?User $aktor = null,
     ): array {
         $aturan = $this->pengaturanService->semuaPada($properti->id, $tanggal);
         $beratCenti = $this->beratKeCenti($beratKg);
@@ -305,11 +307,15 @@ class LaundryService
 
         if ($duplikat !== null) {
             $tglTampil = CarbonImmutable::parse($tanggal, 'Asia/Jakarta')->format('d/m/Y');
+            $bolehUbahDuplikat = $aktor === null ? true : $aktor->can('update', $duplikat);
             $hasil['duplikat'] = [
                 'id' => $duplikat->id,
-                'url_ubah' => route('laundry.edit', $duplikat),
+                'url_ubah' => $bolehUbahDuplikat ? route('laundry.edit', $duplikat) : null,
+                'boleh_ubah' => $bolehUbahDuplikat,
             ];
-            $hasil['galat'] = "{$penghuni->nama} sudah memiliki catatan laundry pada {$tglTampil}. Satu penghuni hanya 1 catatan per tanggal; silakan ubah catatan yang sudah ada.";
+            $hasil['galat'] = $bolehUbahDuplikat
+                ? "{$penghuni->nama} sudah memiliki catatan laundry pada {$tglTampil}. Satu penghuni hanya 1 catatan per tanggal; silakan ubah catatan yang sudah ada."
+                : "{$penghuni->nama} sudah memiliki catatan laundry pada {$tglTampil} (terkunci / dicatat staf lain). Satu penghuni hanya 1 catatan per tanggal.";
         }
 
         $bulan = CarbonImmutable::parse($tanggal, 'Asia/Jakarta')->format('Y-m');
@@ -431,6 +437,7 @@ class LaundryService
             'jenis' => $jenis,
             'penghuni_id' => $penghuniId,
             'kamar_id' => $kamarId,
+            'nama_tanpa_nama' => $jenis === 'tanpa_nama' ? $this->teksAtauNull($data['nama_tanpa_nama'] ?? null) : null,
             'berat_kg' => $beratKg,
             'biaya_utama' => $biayaUtama,
             'biaya_manual' => $biayaManual,
@@ -564,6 +571,7 @@ class LaundryService
             'jenis' => $laundry->jenis,
             'penghuni_id' => $laundry->penghuni_id,
             'kamar_id' => $laundry->kamar_id,
+            'nama_tanpa_nama' => $laundry->nama_tanpa_nama,
             'berat_kg' => $laundry->berat_kg !== null ? (string) $laundry->berat_kg : null,
             'biaya_utama' => $laundry->biaya_utama,
             'biaya_manual' => $laundry->biaya_manual,

@@ -317,6 +317,10 @@ class PropertiWizardService
 
                 if ($stafIds->isNotEmpty()) {
                     DB::table('sessions')->whereIn('user_id', $stafIds)->delete();
+                    DB::table('personal_access_tokens')
+                        ->where('tokenable_type', User::class)
+                        ->whereIn('tokenable_id', $stafIds)
+                        ->delete();
                 }
             }
 

@@ -69,10 +69,15 @@ class SimpanLaundryRequest extends FormRequest
             }
         }
 
+        $namaTanpaNamaRaw = trim((string) $this->input('nama_tanpa_nama', ''));
+
         $this->merge([
             'jenis' => $jenis,
             'penghuni_id' => $jenis === 'penghuni' && trim((string) $this->input('penghuni_id', '')) !== ''
                 ? $this->input('penghuni_id')
+                : null,
+            'nama_tanpa_nama' => $jenis === 'tanpa_nama' && $namaTanpaNamaRaw !== ''
+                ? $namaTanpaNamaRaw
                 : null,
             'berat_kg' => $berat,
             'biaya_utama' => $biaya,
@@ -99,6 +104,7 @@ class SimpanLaundryRequest extends FormRequest
                     fn ($query) => $query->where('properti_id', $properti?->id)->whereNull('deleted_at')
                 ),
             ],
+            'nama_tanpa_nama' => ['nullable', 'string', 'max:120'],
             'berat_kg' => ['nullable', 'numeric', 'gt:0', 'max:99.99', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'konfirmasi_berat_besar' => ['sometimes', 'boolean'],
             'biaya_utama' => ['nullable', 'integer', 'min:0', 'max:10000000'],
@@ -126,6 +132,7 @@ class SimpanLaundryRequest extends FormRequest
             'penghuni_id.required_if' => 'Penghuni belum dipilih untuk catatan laundry penghuni.',
             'penghuni_id.integer' => 'Pilihan penghuni tidak valid.',
             'penghuni_id.exists' => 'Penghuni tidak ditemukan atau bukan milik properti ini.',
+            'nama_tanpa_nama.max' => 'Nama / penanda cucian tanpa nama maksimal 120 karakter.',
             'berat_kg.numeric' => 'Berat cucian utama harus berupa angka.',
             'berat_kg.gt' => 'Berat cucian utama harus lebih dari 0 kg.',
             'berat_kg.max' => 'Berat cucian utama maksimal 99,99 kg.',

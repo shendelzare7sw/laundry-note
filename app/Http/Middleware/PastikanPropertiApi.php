@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Properti;
 use App\Models\User;
+use App\Support\PesanAksesAkun;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,18 +31,22 @@ class PastikanPropertiApi
         if (! $user->aktif) {
             $user->currentAccessToken()?->delete();
 
-            return $this->galat($request, 403, 'AKUN_NONAKTIF', 'Akun Anda sedang dinonaktifkan. Hubungi pengelola.');
+            return $this->galat($request, 403, 'AKUN_NONAKTIF', PesanAksesAkun::akunNonaktif($user));
         }
 
         if ($user->role->isStafProperti()) {
             $properti = $user->properti;
 
             if ($properti === null) {
-                return $this->galat($request, 403, 'PROPERTI_TIDAK_TERIKAT', 'Akun Anda belum terhubung ke properti mana pun.');
+                $user->currentAccessToken()?->delete();
+
+                return $this->galat($request, 403, 'PROPERTI_TIDAK_TERIKAT', PesanAksesAkun::propertiTidakTerikat());
             }
 
             if ($properti->status !== 'aktif') {
-                return $this->galat($request, 403, 'PROPERTI_TIDAK_AKTIF', 'Properti penempatan Anda sedang tidak aktif.');
+                $user->currentAccessToken()?->delete();
+
+                return $this->galat($request, 403, 'PROPERTI_TIDAK_AKTIF', PesanAksesAkun::propertiTidakAktif());
             }
 
             app()->instance('properti.aktif', $properti);

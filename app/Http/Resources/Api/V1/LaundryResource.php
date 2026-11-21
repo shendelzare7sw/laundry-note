@@ -45,6 +45,7 @@ class LaundryResource extends JsonResource
             'penghuni_nama' => $this->relationLoaded('penghuni') ? $this->penghuni?->nama : null,
             'kamar_id' => $this->kamar_id,
             'kamar_nomor' => $this->relationLoaded('kamar') ? $this->kamar?->nomor : null,
+            'nama_tanpa_nama' => $this->nama_tanpa_nama,
             'berat_centi' => $beratCenti,
             'berat_label' => $beratCenti !== null ? $hargaService->dariCentiKg($beratCenti, true) : null,
             'biaya_utama' => $this->biaya_utama,

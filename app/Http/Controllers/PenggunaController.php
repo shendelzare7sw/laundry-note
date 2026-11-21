@@ -81,6 +81,23 @@ class PenggunaController extends Controller
 
         $statusBaru = ! $pengguna->aktif;
 
+        if (! $statusBaru && $pengguna->role === Peran::DevAdmin) {
+            $sisaDevAdminAktif = User::query()
+                ->where('role', Peran::DevAdmin->value)
+                ->where('aktif', true)
+                ->whereKeyNot($pengguna->id)
+                ->count();
+
+            if ($sisaDevAdminAktif === 0) {
+                return redirect()
+                    ->route('pengguna.index')
+                    ->with('toast', [
+                        'tipe' => 'danger',
+                        'pesan' => 'Tidak dapat menonaktifkan satu-satunya Developer Admin yang aktif.',
+                    ]);
+            }
+        }
+
         if ($statusBaru && $pengguna->role === Peran::Admin && $pengguna->properti_id !== null) {
             $sudahAdaAdminAktif = User::query()
                 ->where('properti_id', $pengguna->properti_id)
@@ -103,6 +120,7 @@ class PenggunaController extends Controller
 
         if (! $statusBaru) {
             DB::table('sessions')->where('user_id', $pengguna->id)->delete();
+            $pengguna->tokens()->delete();
         }
 
         $labelStatus = $statusBaru ? 'diaktifkan' : 'dinonaktifkan';
@@ -119,6 +137,7 @@ class PenggunaController extends Controller
         ]);
 
         DB::table('sessions')->where('user_id', $pengguna->id)->delete();
+        $pengguna->tokens()->delete();
 
         return redirect()
             ->route('pengguna.index')

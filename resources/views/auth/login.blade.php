@@ -1,5 +1,15 @@
 <x-guest-layout judul="Masuk">
     <x-kartu>
+        @if (session('auth_blocked'))
+            <div role="alert" class="mb-4 flex items-start gap-2.5 rounded-xl border border-danger/35 bg-danger/10 p-3.5 text-xs text-danger">
+                <i class="fas fa-ban mt-0.5 shrink-0 text-sm" aria-hidden="true"></i>
+                <div>
+                    <p class="font-bold">Akses Masuk Ditolak</p>
+                    <p class="mt-0.5 leading-relaxed">{{ session('auth_blocked') }}</p>
+                </div>
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('login') }}" class="space-y-4">
             @csrf
 

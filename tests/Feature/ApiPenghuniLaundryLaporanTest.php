@@ -98,11 +98,64 @@ class ApiPenghuniLaundryLaporanTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.id', $laundryId);
 
-        // Info kuota pada tanggal sama mendeteksi duplikat 1-tanggal-1-catatan
+        // Info kuota pada tanggal sama mendeteksi duplikat 1-tanggal-1-catatan + boleh_ubah
         $this->withToken($this->adminToken)
             ->getJson("/api/v1/laundry/info-kuota?tanggal=2026-10-05&penghuni_id={$penghuniId}")
             ->assertOk()
-            ->assertJsonPath('duplikat.id', $laundryId);
+            ->assertJsonPath('duplikat.id', $laundryId)
+            ->assertJsonPath('duplikat.boleh_ubah', true);
+
+        // Kirim catatan BARU (ref berbeda) pada tanggal & penghuni sama -> ditolak 422
+        $this->withToken($this->adminToken)
+            ->postJson('/api/v1/laundry', [
+                'jenis' => 'penghuni',
+                'tanggal' => '2026-10-05',
+                'penghuni_id' => $penghuniId,
+                'berat_kg' => '3.0',
+                'ref' => 'mobile-ref-duplikat',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['tanggal']);
+
+        // Penjaga yang tidak berwenang edit catatan admin tetap mendapat duplikat.boleh_ubah = false
+        $penjaga = User::factory()->create([
+            'role' => Peran::Penjaga,
+            'properti_id' => $this->properti->id,
+            'aktif' => true,
+        ]);
+        $penjagaToken = $penjaga->createToken('android-penjaga')->plainTextToken;
+        app('auth')->forgetGuards();
+        $this->withToken($penjagaToken)
+            ->getJson("/api/v1/laundry/info-kuota?tanggal=2026-10-05&penghuni_id={$penghuniId}")
+            ->assertOk()
+            ->assertJsonPath('duplikat.id', $laundryId)
+            ->assertJsonPath('duplikat.boleh_ubah', false);
+        app('auth')->forgetGuards();
+
+        // Laundry tanpa_nama dengan nama_tanpa_nama (penanda tas merah) + tetapkan pemilik bentrok tanggal -> 422
+        $tanpaNamaRes = $this->withToken($this->adminToken)
+            ->postJson('/api/v1/laundry', [
+                'jenis' => 'tanpa_nama',
+                'tanggal' => '2026-10-05',
+                'nama_tanpa_nama' => 'Tas merah',
+                'berat_kg' => '2.5',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.nama_tanpa_nama', 'Tas merah');
+        $tanpaNamaId = (int) $tanpaNamaRes->json('data.id');
+
+        // Tetapkan pemilik ke penghuni yang sudah punya catatan pada tanggal sama -> ditolak 422
+        $this->withToken($this->adminToken)
+            ->postJson("/api/v1/laundry/{$tanpaNamaId}/tetapkan-pemilik", [
+                'penghuni_id' => $penghuniId,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['tanggal']);
+
+        // Hapus catatan tanpa nama sementara agar total laporan di bawah tetap persis 23,0 kg
+        $this->withToken($this->adminToken)
+            ->deleteJson("/api/v1/laundry/{$tanpaNamaId}")
+            ->assertOk();
 
         // 3. Pindah ke kamar 310 (kuota tidak ter-reset)
         $this->withToken($this->adminToken)
@@ -167,7 +220,7 @@ class ApiPenghuniLaundryLaporanTest extends TestCase
         $this->withToken($this->adminToken)
             ->getJson('/api/v1/laundry/terhapus')
             ->assertOk()
-            ->assertJsonPath('meta.total', 1);
+            ->assertJsonPath('meta.total', 2);
 
         $this->withToken($this->adminToken)
             ->postJson("/api/v1/laundry/{$laundryId}/pulihkan")

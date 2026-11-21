@@ -25,6 +25,8 @@ class PengaturanApiController extends Controller
     {
         /** @var Properti $properti */
         $properti = app('properti.aktif');
+        Gate::authorize('manage', [Pengaturan::class, $properti]);
+
         $tanggal = $request->filled('tanggal')
             ? $request->string('tanggal')->toString()
             : now('Asia/Jakarta')->toDateString();

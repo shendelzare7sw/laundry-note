@@ -242,7 +242,7 @@
                             : null;
                         $judulBaris = match ($baris->jenis) {
                             'gedung' => 'Laundry Gedung',
-                            'tanpa_nama' => 'Tanpa Nama',
+                            'tanpa_nama' => $baris->nama_tanpa_nama ? 'Tanpa Nama · ' . $baris->nama_tanpa_nama : 'Tanpa Nama',
                             default => 'Kamar ' . ($baris->kamar?->nomor ?? '-'),
                         };
                         $ikonJenis = match ($baris->jenis) {
@@ -369,7 +369,7 @@
                                             <button
                                                 type="button"
                                                 data-tetapkan-action="{{ route('laundry.tetapkan-pemilik', $baris) }}"
-                                                data-tetapkan-ringkasan="Tanggal {{ $baris->tanggal->format('d/m/Y') }}{{ $beratTampil ? ' · ' . $beratTampil . ' kg' : '' }}"
+                                                data-tetapkan-ringkasan="Tanggal {{ $baris->tanggal->format('d/m/Y') }}{{ $baris->nama_tanpa_nama ? ' · ' . $baris->nama_tanpa_nama : '' }}{{ $beratTampil ? ' · ' . $beratTampil . ' kg' : '' }}"
                                                 class="inline-flex min-h-11 items-center gap-1 rounded-xl border border-gold/40 bg-gold-container px-3 text-xs font-bold text-on-gold hover:bg-gold/20"
                                             >
                                                 <i class="fas fa-user-check" aria-hidden="true"></i>

@@ -237,13 +237,17 @@ class LaporanService
                     $tanggalLabel = CarbonImmutable::parse($laundry->tanggal, 'Asia/Jakarta')
                         ->locale('id')
                         ->translatedFormat('j M Y');
+                    $labelTampil = $jenisLain === 'tanpa_nama' && ! empty($laundry->nama_tanpa_nama)
+                        ? "{$tanggalLabel} - {$laundry->nama_tanpa_nama}"
+                        : $tanggalLabel;
 
                     if ($beratCenti > 0 || $laundry->biaya_utama !== null) {
                         $baris[] = [
                             'tipe' => 'utama',
                             'laundry_id' => $laundry->id,
                             'tanggal' => $laundry->tanggal->toDateString(),
-                            'tanggal_label' => $tanggalLabel,
+                            'tanggal_label' => $labelTampil,
+                            'nama_tanpa_nama' => $laundry->nama_tanpa_nama,
                             'berat_centi' => $beratCenti,
                             'berat_label' => $this->waService->formatKg($beratCenti),
                             'biaya' => $laundry->biaya_utama,
@@ -259,7 +263,7 @@ class LaporanService
                                 'tipe' => 'item',
                                 'laundry_id' => $laundry->id,
                                 'tanggal' => $laundry->tanggal->toDateString(),
-                                'tanggal_label' => $tanggalLabel,
+                                'tanggal_label' => $labelTampil,
                                 'nama_item' => $item->nama,
                                 'biaya' => (int) $item->biaya,
                                 'merah' => false,
@@ -272,7 +276,7 @@ class LaporanService
                             'tipe' => 'item',
                             'laundry_id' => $laundry->id,
                             'tanggal' => $laundry->tanggal->toDateString(),
-                            'tanggal_label' => $tanggalLabel,
+                            'tanggal_label' => $labelTampil,
                             'nama_item' => $laundry->item_nama,
                             'biaya' => (int) ($laundry->item_biaya ?? 0),
                             'merah' => false,

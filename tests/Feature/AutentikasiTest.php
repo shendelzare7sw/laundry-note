@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\Peran;
 use App\Models\Properti;
 use App\Models\User;
+use App\Support\PesanAksesAkun;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -92,7 +93,12 @@ class AutentikasiTest extends TestCase
             'aktif' => true,
         ]);
 
-        $this->actingAs($penjaga)->get('/')->assertForbidden();
+        // Sesi staf yang propertinya dinonaktifkan langsung dipaksa logout & diarahkan ke /login
+        $this->actingAs($penjaga)
+            ->get('/')
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('auth_blocked', PesanAksesAkun::propertiTidakAktif());
+        $this->assertGuest();
 
         $this->app['auth']->forgetGuards();
 
@@ -104,7 +110,7 @@ class AutentikasiTest extends TestCase
             ])
             ->assertRedirect('/login')
             ->assertSessionHasErrors([
-                'username' => trans('auth.property_inactive'),
+                'username' => PesanAksesAkun::propertiTidakAktif(),
             ]);
         $this->assertGuest();
 
@@ -117,7 +123,7 @@ class AutentikasiTest extends TestCase
             ])
             ->assertRedirect('/login')
             ->assertSessionHasErrors([
-                'username' => trans('auth.property_inactive'),
+                'username' => PesanAksesAkun::propertiTidakAktif(),
             ]);
         $this->assertGuest();
     }

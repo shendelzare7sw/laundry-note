@@ -128,6 +128,7 @@ class LaundryQueryService
                 $pola = '%'.$cari.'%';
                 $query->where(function ($subQuery) use ($pola): void {
                     $subQuery->where('catatan', 'like', $pola)
+                        ->orWhere('nama_tanpa_nama', 'like', $pola)
                         ->orWhereHas('penghuni', fn ($qp) => $qp->where('nama', 'like', $pola)->orWhere('alias', 'like', $pola))
                         ->orWhereHas('kamar', fn ($qk) => $qk->where('nomor', 'like', $pola))
                         ->orWhereHas('pencatat', fn ($qu) => $qu->where('name', 'like', $pola))

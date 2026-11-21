@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'jenis',
     'penghuni_id',
     'kamar_id',
+    'nama_tanpa_nama',
     'berat_kg',
     'biaya_utama',
     'biaya_manual',

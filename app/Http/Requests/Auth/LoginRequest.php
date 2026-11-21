@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use App\Support\PesanAksesAkun;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -61,9 +62,11 @@ class LoginRequest extends FormRequest
 
         if (! $user->aktif) {
             RateLimiter::hit($this->throttleKey());
+            $pesan = PesanAksesAkun::akunNonaktif($user);
+            session()->flash('auth_blocked', $pesan);
 
             throw ValidationException::withMessages([
-                'username' => trans('auth.inactive'),
+                'username' => $pesan,
             ]);
         }
 
@@ -72,9 +75,13 @@ class LoginRequest extends FormRequest
 
             if ($properti === null || $properti->status !== 'aktif') {
                 RateLimiter::hit($this->throttleKey());
+                $pesan = $properti === null
+                    ? PesanAksesAkun::propertiTidakTerikat()
+                    : PesanAksesAkun::propertiTidakAktif();
+                session()->flash('auth_blocked', $pesan);
 
                 throw ValidationException::withMessages([
-                    'username' => trans('auth.property_inactive'),
+                    'username' => $pesan,
                 ]);
             }
         }

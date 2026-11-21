@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\BerandaApiController;
 use App\Http\Controllers\Api\V1\LaporanApiController;
 use App\Http\Controllers\Api\V1\LaundryApiController;
 use App\Http\Controllers\Api\V1\PengaturanApiController;
+use App\Http\Controllers\Api\V1\PenggunaApiController;
 use App\Http\Controllers\Api\V1\PenghuniApiController;
 use App\Http\Controllers\Api\V1\PropertiApiController;
 use Illuminate\Support\Facades\Route;
@@ -14,10 +15,21 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         ->middleware('throttle:15,1')
         ->name('auth.login');
 
-    Route::middleware('auth:sanctum')->group(function (): void {
+    Route::middleware(['auth:sanctum', 'akun.aktif.api'])->group(function (): void {
         Route::post('/auth/logout', [AuthApiController::class, 'logout'])->name('auth.logout');
         Route::get('/me', [AuthApiController::class, 'me'])->name('me');
         Route::get('/properti', [PropertiApiController::class, 'index'])->name('properti.index');
+        Route::post('/properti', [PropertiApiController::class, 'store'])->name('properti.store');
+        Route::put('/properti/{properti}', [PropertiApiController::class, 'update'])->name('properti.update');
+        Route::get('/properti/{properti}/setup', [PropertiApiController::class, 'setupShow'])->name('properti.setup.show');
+        Route::post('/properti/{properti}/setup/kamar', [PropertiApiController::class, 'setupKamar'])->name('properti.setup.kamar');
+        Route::post('/properti/{properti}/setup/aturan', [PropertiApiController::class, 'setupAturan'])->name('properti.setup.aturan');
+        Route::post('/properti/{properti}/setup/aktifkan', [PropertiApiController::class, 'setupAktifkan'])->name('properti.setup.aktifkan');
+
+        Route::get('/pengguna', [PenggunaApiController::class, 'index'])->name('pengguna.index');
+        Route::post('/pengguna', [PenggunaApiController::class, 'store'])->name('pengguna.store');
+        Route::patch('/pengguna/{pengguna}/status', [PenggunaApiController::class, 'toggleAktif'])->name('pengguna.toggle-aktif');
+        Route::patch('/pengguna/{pengguna}/reset-password', [PenggunaApiController::class, 'resetPassword'])->name('pengguna.reset-password');
 
         Route::middleware('properti.api')->group(function (): void {
             Route::get('/beranda', [BerandaApiController::class, 'index'])->name('beranda');

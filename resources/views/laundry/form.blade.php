@@ -26,6 +26,7 @@
         'jenis' => old('jenis', $laundry?->jenis ?? 'penghuni'),
         'tanggal' => $tanggalAwal,
         'penghuniId' => old('penghuni_id', $penghuniAwalId),
+        'namaTanpaNama' => old('nama_tanpa_nama', $laundry?->nama_tanpa_nama ?? ''),
         'daftarPenghuni' => $daftarPenghuni->values()->all(),
         'beratKg' => old('berat_kg', $beratLama),
         'biayaUtama' => (string) ($biayaUtamaAwal ?? ''),
@@ -228,6 +229,33 @@
 
                             <p id="laundry-penghuni-error" data-field-error="penghuni_id" class="text-xs font-medium text-danger {{ $errors->has('penghuni_id') ? '' : 'hidden' }}">{{ $errors->first('penghuni_id') }}</p>
                         </div>
+
+                        {{-- Penanda / Nama Cucian untuk jenis Tanpa Nama --}}
+                        <div
+                            class="space-y-1.5"
+                            data-field-wrapper
+                            data-field-label="Nama / Penanda Cucian"
+                            data-field-name="nama_tanpa_nama"
+                            x-show="jenis === 'tanpa_nama'"
+                            x-cloak
+                        >
+                            <label for="laundry-nama-tanpa-nama" class="block text-sm font-medium text-ink">
+                                Nama / Penanda Cucian
+                            </label>
+                            <input
+                                id="laundry-nama-tanpa-nama"
+                                name="nama_tanpa_nama"
+                                type="text"
+                                maxlength="120"
+                                x-model="namaTanpaNama"
+                                :disabled="jenis !== 'tanpa_nama'"
+                                placeholder="Contoh: Tas merah, plastik biru..."
+                                aria-invalid="{{ $errors->has('nama_tanpa_nama') ? 'true' : 'false' }}"
+                                class="block min-h-12 w-full rounded-xl border bg-surface px-3.5 text-base text-ink placeholder:text-subtle focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20 sm:text-sm {{ $errors->has('nama_tanpa_nama') ? 'border-danger' : 'border-line-strong' }}"
+                            >
+                            <p class="text-xs text-muted">Opsional — membantu membedakan cucian tanpa nama (mis. tas merah).</p>
+                            <p id="laundry-nama-tanpa-nama-error" data-field-error="nama_tanpa_nama" class="text-xs font-medium text-danger {{ $errors->has('nama_tanpa_nama') ? '' : 'hidden' }}">{{ $errors->first('nama_tanpa_nama') }}</p>
+                        </div>
                     </div>
 
                     {{-- Panel Info Kuota Live & Peringatan Duplikat Tanggal (ARIA live region) --}}
@@ -248,7 +276,7 @@
                             </div>
 
                             <a
-                                x-show="duplikatCatatan"
+                                x-show="duplikatCatatan && duplikatCatatan.boleh_ubah !== false && duplikatCatatan.url_ubah"
                                 x-cloak
                                 :href="duplikatCatatan?.url_ubah"
                                 class="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-danger px-3 text-xs font-bold text-white hover:bg-danger/90"

@@ -1,5 +1,11 @@
 @php
     $toastSession = session('toast');
+    if ($toastSession === null && isset($errors) && $errors->any()) {
+        $toastSession = [
+            'tipe' => 'danger',
+            'pesan' => (string) $errors->first(),
+        ];
+    }
 @endphp
 
 <div

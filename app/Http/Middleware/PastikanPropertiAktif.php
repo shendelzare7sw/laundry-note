@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Properti;
+use App\Support\PesanAksesAkun;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,24 +26,18 @@ class PastikanPropertiAktif
         }
 
         if (! $user->aktif) {
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return redirect()
-                ->route('login')
-                ->withErrors(['username' => __('auth.inactive')]);
+            return $this->paksaKeluarDenganPesan($request, PesanAksesAkun::akunNonaktif($user));
         }
 
         if ($user->role->isStafProperti()) {
             $properti = $user->properti;
 
             if ($properti === null) {
-                abort(403, 'Akun Anda belum terhubung ke properti mana pun.');
+                return $this->paksaKeluarDenganPesan($request, PesanAksesAkun::propertiTidakTerikat());
             }
 
             if ($properti->status !== 'aktif') {
-                abort(403, 'Properti penempatan Anda sedang tidak aktif.');
+                return $this->paksaKeluarDenganPesan($request, PesanAksesAkun::propertiTidakAktif());
             }
 
             $routeProperti = $request->route('properti');
@@ -87,5 +82,17 @@ class PastikanPropertiAktif
         }
 
         return $next($request);
+    }
+
+    private function paksaKeluarDenganPesan(Request $request, string $pesan): Response
+    {
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()
+            ->route('login')
+            ->with('auth_blocked', $pesan)
+            ->withErrors(['username' => $pesan]);
     }
 }

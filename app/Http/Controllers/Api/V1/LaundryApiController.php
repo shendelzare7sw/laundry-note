@@ -93,8 +93,9 @@ class LaundryApiController extends Controller
             ? Laundry::query()->where('properti_id', $properti->id)->find($kecualiId)
             : null;
 
-        $berat = is_string($request->query('berat_kg')) ? $request->query('berat_kg') : null;
-        $pratinjau = $this->laundryService->pratinjau($properti, $tanggal, $penghuni, $berat, $kecuali);
+        $beratRaw = is_string($request->query('berat_kg')) ? trim($request->query('berat_kg')) : '';
+        $berat = preg_match('/^\d+(?:[.,]\d{1,2})?$/', $beratRaw) === 1 ? $beratRaw : null;
+        $pratinjau = $this->laundryService->pratinjau($properti, $tanggal, $penghuni, $berat, $kecuali, $request->user());
         $daftarPenghuni = $this->queryService->penghuniAktifPadaTanggal($properti, $tanggal, $penghuni?->id);
 
         return response()->json([
