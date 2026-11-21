@@ -10,27 +10,27 @@
 
     <div class="space-y-4">
         @if ($propertiAktif)
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
                 <a
                     href="{{ route('laundry.create') }}"
-                    class="inline-flex min-h-11 items-center gap-2 rounded-full bg-maroon px-4 text-xs font-bold text-white shadow-xs transition-colors hover:bg-maroon-cerah sm:px-5 sm:text-sm"
+                    class="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-full bg-maroon px-2.5 text-center text-xs font-bold text-white shadow-xs transition-colors hover:bg-maroon-cerah sm:px-5 sm:text-sm"
                 >
-                    <i class="fas fa-plus text-xs" aria-hidden="true"></i>
-                    <span>Catat Laundry</span>
+                    <i class="fas fa-plus shrink-0 text-xs" aria-hidden="true"></i>
+                    <span class="truncate">Catat Laundry</span>
                 </a>
                 <a
                     href="{{ route('laundry.index') }}"
-                    class="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 text-xs font-bold text-ink hover:bg-sunken sm:text-sm"
+                    class="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-full border border-line-strong bg-surface px-2.5 text-center text-xs font-bold text-ink hover:bg-sunken sm:px-4 sm:text-sm"
                 >
-                    <i class="fas fa-shirt text-xs text-muted" aria-hidden="true"></i>
-                    <span>Daftar Laundry</span>
+                    <i class="fas fa-shirt shrink-0 text-xs text-muted" aria-hidden="true"></i>
+                    <span class="truncate">Daftar Laundry</span>
                 </a>
                 <a
                     href="{{ route('penghuni.index') }}"
-                    class="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 text-xs font-bold text-ink hover:bg-sunken sm:text-sm"
+                    class="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-full border border-line-strong bg-surface px-2.5 text-center text-xs font-bold text-ink hover:bg-sunken sm:px-4 sm:text-sm"
                 >
-                    <i class="fas fa-users text-xs text-muted" aria-hidden="true"></i>
-                    <span>Daftar Penghuni</span>
+                    <i class="fas fa-users shrink-0 text-xs text-muted" aria-hidden="true"></i>
+                    <span class="truncate">Penghuni</span>
                 </a>
             </div>
 

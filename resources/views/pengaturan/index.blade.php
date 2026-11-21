@@ -34,16 +34,16 @@
             </x-kartu>
         @endif
 
-        {{-- Navigasi Tab --}}
-        <nav aria-label="Kategori pengaturan properti" class="flex flex-wrap gap-2">
+        {{-- Navigasi Tab (Selalu 3 sejajar rapi di mobile & zoom manapun) --}}
+        <nav aria-label="Kategori pengaturan properti" class="grid grid-cols-3 gap-1.5 sm:inline-flex sm:gap-2">
             @foreach ($daftarTab as $kode => $info)
                 @php $aktif = $tab === $kode; @endphp
                 <a
                     href="{{ route('pengaturan.index', ['tab' => $kode]) }}"
-                    class="inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition {{ $aktif ? 'border-maroon bg-maroon text-white' : 'border-line-strong bg-surface text-ink hover:bg-sunken' }}"
+                    class="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-full border px-2 text-center text-xs font-bold transition sm:px-4 sm:text-sm {{ $aktif ? 'border-maroon bg-maroon text-white' : 'border-line-strong bg-surface text-ink hover:bg-sunken' }}"
                 >
-                    <i class="{{ str_contains($info['ikon'], ' ') ? $info['ikon'] : 'fas ' . $info['ikon'] }} text-xs" aria-hidden="true"></i>
-                    <span>{{ $info['label'] }}</span>
+                    <i class="{{ str_contains($info['ikon'], ' ') ? $info['ikon'] : 'fas ' . $info['ikon'] }} shrink-0 text-xs" aria-hidden="true"></i>
+                    <span class="truncate">{{ $info['label'] }}</span>
                 </a>
             @endforeach
         </nav>

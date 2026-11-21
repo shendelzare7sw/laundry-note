@@ -53,7 +53,7 @@
         {{-- Filter Periode & Pencarian --}}
         <search aria-label="Filter catatan laundry">
             <div class="rounded-2xl border border-line bg-surface p-3.5 shadow-xs space-y-3">
-                <div class="flex flex-wrap gap-1.5" role="group" aria-label="Pilih periode waktu">
+                <div class="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:gap-2" role="group" aria-label="Pilih periode waktu">
                     @foreach ($pilihanPeriode as $kode => $label)
                         @php
                             $tautanFilter = array_filter([
@@ -68,9 +68,9 @@
                         <a
                             href="{{ route('laundry.index', $tautanFilter) }}"
                             @if ($sedangDipilih) aria-current="true" @endif
-                            class="inline-flex min-h-10 items-center rounded-full border px-3.5 text-xs font-bold transition-colors {{ $sedangDipilih ? 'border-maroon bg-maroon text-white' : 'border-line-strong bg-alt text-muted hover:bg-sunken hover:text-ink' }}"
+                            class="inline-flex min-h-10 min-w-0 items-center justify-center rounded-full border px-2 text-center text-xs font-bold transition-colors sm:px-3.5 {{ $sedangDipilih ? 'border-maroon bg-maroon text-white' : 'border-line-strong bg-alt text-muted hover:bg-sunken hover:text-ink' }}"
                         >
-                            {{ $label }}
+                            <span class="truncate">{{ $label }}</span>
                         </a>
                     @endforeach
                 </div>

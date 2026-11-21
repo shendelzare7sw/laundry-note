@@ -35,7 +35,7 @@
 
         <x-kartu>
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <nav aria-label="Filter status penghuni" class="flex flex-wrap gap-2">
+                <nav aria-label="Filter status penghuni" class="grid grid-cols-4 gap-1.5 sm:inline-flex sm:gap-2">
                     @foreach ([
                         'semua' => ['label' => 'Semua', 'jumlah' => $jumlahSemua],
                         'booking' => ['label' => 'Booking', 'jumlah' => $jumlahBooking],
@@ -45,19 +45,19 @@
                         @php $sedangAktif = $tab === $kodeTab; @endphp
                         <a
                             href="{{ route('penghuni.index', array_filter(['tab' => $kodeTab, 'cari' => $cari !== '' ? $cari : null, 'bulan' => $rentangBulan['bulan']])) }}"
-                            class="inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition {{ $sedangAktif ? 'border-maroon bg-maroon text-white' : 'border-line-strong bg-surface text-ink hover:bg-sunken' }}"
+                            class="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-full border px-2 text-xs font-medium transition sm:min-h-11 sm:gap-2 sm:px-4 sm:text-sm {{ $sedangAktif ? 'border-maroon bg-maroon text-white' : 'border-line-strong bg-surface text-ink hover:bg-sunken' }}"
                         >
-                            <span>{{ $infoTab['label'] }}</span>
-                            <span class="rounded-full px-2 py-0.5 text-xs font-bold {{ $sedangAktif ? 'bg-white/20 text-white' : 'bg-sunken text-muted' }}">
+                            <span class="truncate">{{ $infoTab['label'] }}</span>
+                            <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-bold sm:px-2 sm:text-xs {{ $sedangAktif ? 'bg-white/20 text-white' : 'bg-sunken text-muted' }}">
                                 {{ $infoTab['jumlah'] }}
                             </span>
                         </a>
                     @endforeach
                 </nav>
 
-                <form method="GET" action="{{ route('penghuni.index') }}" class="flex flex-wrap items-center gap-2">
+                <form method="GET" action="{{ route('penghuni.index') }}" class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                     <input type="hidden" name="tab" value="{{ $tab }}">
-                    <div class="relative min-w-[14rem] flex-1 sm:w-64">
+                    <div class="relative w-full sm:w-64">
                         <label for="cari-penghuni" class="sr-only">Cari kamar / penghuni</label>
                         <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-subtle">
                             <i class="fas fa-magnifying-glass text-xs" aria-hidden="true"></i>
@@ -71,31 +71,33 @@
                             class="min-h-11 w-full rounded-full border border-line-strong bg-sunken/70 pl-9 pr-3.5 text-sm text-ink placeholder:text-subtle focus:border-maroon focus:bg-surface focus:outline-none focus:ring-2 focus:ring-maroon/20"
                         >
                     </div>
-                    <div>
-                        <label for="filter-bulan-penghuni" class="sr-only">Bulan kuota</label>
-                        <input
-                            id="filter-bulan-penghuni"
-                            type="month"
-                            name="bulan"
-                            value="{{ $rentangBulan['bulan'] }}"
-                            class="min-h-11 rounded-xl border border-line-strong bg-surface px-3 text-sm text-ink focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20"
+                    <div class="flex items-center gap-2">
+                        <div class="min-w-0 flex-1 sm:flex-initial">
+                            <label for="filter-bulan-penghuni" class="sr-only">Bulan kuota</label>
+                            <input
+                                id="filter-bulan-penghuni"
+                                type="month"
+                                name="bulan"
+                                value="{{ $rentangBulan['bulan'] }}"
+                                class="min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3 text-sm text-ink focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/20"
+                            >
+                        </div>
+                        <button
+                            type="submit"
+                            class="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-maroon px-4 text-sm font-bold text-white hover:bg-maroon-cerah"
                         >
+                            <i class="fas fa-magnifying-glass text-xs" aria-hidden="true"></i>
+                            <span>Terapkan</span>
+                        </button>
+                        @if ($cari !== '')
+                            <a
+                                href="{{ route('penghuni.index', ['tab' => $tab, 'bulan' => $rentangBulan['bulan']]) }}"
+                                class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-line-strong px-3.5 text-sm text-ink hover:bg-sunken"
+                            >
+                                Reset
+                            </a>
+                        @endif
                     </div>
-                    <button
-                        type="submit"
-                        class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-maroon px-4 text-sm font-bold text-white hover:bg-maroon-cerah"
-                    >
-                        <i class="fas fa-magnifying-glass text-xs" aria-hidden="true"></i>
-                        <span>Terapkan</span>
-                    </button>
-                    @if ($cari !== '')
-                        <a
-                            href="{{ route('penghuni.index', ['tab' => $tab, 'bulan' => $rentangBulan['bulan']]) }}"
-                            class="inline-flex min-h-11 items-center justify-center rounded-xl border border-line-strong px-3.5 text-sm text-ink hover:bg-sunken"
-                        >
-                            Reset
-                        </a>
-                    @endif
                 </form>
             </div>
         </x-kartu>

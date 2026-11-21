@@ -193,4 +193,35 @@ class LaporanServiceTest extends TestCase
         $this->assertSame('Travis', $csv['baris'][0][2]);
         $this->assertSame('5,0', $csv['baris'][0][5]);
     }
+
+    public function test_penghuni_keluar_tetap_muncul_di_laporan_dan_membawa_keterangan_keluar(): void
+    {
+        $reynaldhi = $this->penempatanService->masuk($this->properti, [
+            'nama' => 'Reynaldhi',
+            'kamar_id' => $this->kamar201->id,
+            'tanggal_masuk' => '2026-10-01',
+        ], $this->admin)['penghuni'];
+
+        $this->laundryService->catat($this->properti, [
+            'jenis' => 'penghuni',
+            'tanggal' => '2026-10-06',
+            'penghuni_id' => $reynaldhi->id,
+            'berat_kg' => '4.1',
+        ], $this->admin);
+
+        // Penghuni keluar setelah sempat laundry
+        $this->penempatanService->keluar($reynaldhi, '2026-10-20', 'Selesai kontrak', $this->admin);
+
+        $laporan = $this->laporanService->susunLaporan($this->properti, [
+            'periode' => 'rentang',
+            'dari' => '2026-10-01',
+            'sampai' => '2026-10-31',
+        ]);
+
+        $kartu = $laporan['kartu_penghuni']->firstWhere('penghuni.id', $reynaldhi->id);
+        $this->assertNotNull($kartu);
+        $this->assertSame('keluar', $kartu['penghuni']->status);
+        $this->assertSame('201', $kartu['label_kamar']);
+        $this->assertSame('4,1', $kartu['total_kg_label']);
+    }
 }
