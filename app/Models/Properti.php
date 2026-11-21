@@ -51,6 +51,11 @@ class Properti extends Model
         return $this->hasMany(Penghuni::class, 'properti_id');
     }
 
+    public function penghuniAktif(): HasMany
+    {
+        return $this->hasMany(Penghuni::class, 'properti_id')->where('status', 'aktif');
+    }
+
     public function penempatan(): HasMany
     {
         return $this->hasMany(Penempatan::class, 'properti_id');
