@@ -3,7 +3,7 @@
         $daftarTab = [
             'aturan' => ['label' => 'Tarif & Kuota', 'ikon' => 'fa-scale-balanced'],
             'izin' => ['label' => 'Izin Penjaga', 'ikon' => 'fa-user-shield'],
-            'whatsapp' => ['label' => 'Template WhatsApp', 'ikon' => 'fa-brands fa-whatsapp'],
+            'whatsapp' => ['label' => 'Template WA', 'ikon' => 'fa-brands fa-whatsapp'],
         ];
         $variabelWa = [
             '{nama}', '{kamar}', '{gedung}', '{periode}', '{rincian_tagihan}',

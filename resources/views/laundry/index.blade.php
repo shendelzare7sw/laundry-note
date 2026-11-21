@@ -1,24 +1,27 @@
 <x-app-layout judul="Laundry" :subjudul="$propertiAktif->nama . ' · ' . $rentang['label']">
     <x-slot:aksiHeader>
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2">
             @if ($bolehLengkapiHarga && ($pratinjauLengkapiHarga['jumlah'] ?? 0) > 0)
                 <button
                     type="button"
                     data-modal-open="modal-lengkapi-harga"
-                    class="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-gold/40 bg-gold-container px-3.5 text-xs font-bold text-on-gold hover:bg-gold/20 sm:text-sm"
+                    aria-label="Lengkapi Harga ({{ $pratinjauLengkapiHarga['jumlah'] }})"
+                    class="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-gold/40 bg-gold-container px-2.5 text-xs font-bold text-on-gold hover:bg-gold/20 sm:px-3.5 sm:text-sm"
                 >
                     <i class="fas fa-wand-magic-sparkles text-xs" aria-hidden="true"></i>
-                    <span>Lengkapi Harga ({{ $pratinjauLengkapiHarga['jumlah'] }})</span>
+                    <span class="hidden sm:inline">Lengkapi Harga</span>
+                    <span>({{ $pratinjauLengkapiHarga['jumlah'] }})</span>
                 </button>
             @endif
 
             @if ($bolehLihatTerhapus)
                 <a
                     href="{{ route('laundry.terhapus') }}"
-                    class="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3.5 text-xs font-bold text-ink hover:bg-sunken sm:text-sm"
+                    aria-label="Daftar Terhapus"
+                    class="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-2.5 text-xs font-bold text-ink hover:bg-sunken sm:px-3.5 sm:text-sm"
                 >
                     <i class="fas fa-trash-can-arrow-up text-xs text-muted" aria-hidden="true"></i>
-                    <span>Terhapus</span>
+                    <span class="hidden sm:inline">Terhapus</span>
                     @if ($jumlahTerhapus > 0)
                         <span class="rounded-full bg-danger/10 px-1.5 py-0.5 text-[11px] font-bold text-danger">{{ $jumlahTerhapus }}</span>
                     @endif
@@ -28,10 +31,11 @@
             @if ($bolehTambah)
                 <a
                     href="{{ route('laundry.create') }}"
-                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-maroon px-4 text-xs font-bold text-white shadow-xs transition-colors hover:bg-maroon-cerah sm:px-5 sm:text-sm"
+                    class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-maroon px-3 text-xs font-bold text-white shadow-xs transition-colors hover:bg-maroon-cerah sm:px-5 sm:text-sm"
                 >
                     <i class="fas fa-plus text-xs" aria-hidden="true"></i>
-                    <span>Catat Laundry</span>
+                    <span class="sm:hidden">Catat</span>
+                    <span class="hidden sm:inline">Catat Laundry</span>
                 </a>
             @endif
         </div>
