@@ -106,12 +106,16 @@ class WhatsAppServiceTest extends TestCase
         $this->assertSame('6281234567890', $hasil['nomor']);
         $this->assertNotNull($hasil['url']);
         $this->assertStringStartsWith('https://wa.me/6281234567890?text=', $hasil['url']);
-        $this->assertStringContainsString('Halo *Glenn* (Kamar 302)', $hasil['pesan']);
-        $this->assertStringContainsString('Selimut', $hasil['pesan']);
-        $this->assertStringContainsString('23,0/20,0 kg', $hasil['pesan']);
-        $this->assertStringContainsString('Tagihan lewat kuota 3,0 kg: Rp24.000', $hasil['pesan']);
-        $this->assertStringContainsString('Bayar terpisah (1 item): Rp15.000', $hasil['pesan']);
-        $this->assertStringContainsString('*Total Tagihan: Rp39.000*', $hasil['pesan']);
+        $this->assertStringContainsString("Halo Glenn (Kamar 302 - D'bata Residence),", $hasil['pesan']);
+        $this->assertStringContainsString('📦 Lewat Kuota Laundry', $hasil['pesan']);
+        $this->assertStringContainsString('Kelebihan: 3 kg', $hasil['pesan']);
+        $this->assertStringContainsString('Biaya: Rp 24.000', $hasil['pesan']);
+        $this->assertStringContainsString('🧺 Tagihan Terpisah', $hasil['pesan']);
+        $this->assertStringContainsString('Jumlah item: 1 item', $hasil['pesan']);
+        $this->assertStringContainsString('Biaya: Rp 15.000', $hasil['pesan']);
+        $this->assertStringContainsString('💰 Total Tagihan: Rp 39.000', $hasil['pesan']);
+        // Biaya utama (kuota gratis) tidak ikut masuk ke tagihan WA
+        $this->assertStringNotContainsString('184.000', $hasil['pesan']);
         $this->assertDoesNotMatchRegularExpression('/\{[a-z0-9_]+\}/i', $hasil['pesan']);
     }
 

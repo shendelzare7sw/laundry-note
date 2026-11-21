@@ -6,8 +6,8 @@
             'whatsapp' => ['label' => 'Template WhatsApp', 'ikon' => 'fa-brands fa-whatsapp'],
         ];
         $variabelWa = [
-            '{nama}', '{kamar}', '{gedung}', '{periode}', '{rincian}',
-            '{kuota_terpakai}', '{kuota}', '{sisa}', '{lewat_kg}',
+            '{nama}', '{kamar}', '{gedung}', '{periode}', '{rincian_tagihan}',
+            '{rincian}', '{kuota_terpakai}', '{kuota}', '{sisa}', '{lewat_kg}',
             '{tagihan_lewat}', '{terpisah}', '{total}',
         ];
         $labelKunciAturan = [
@@ -259,8 +259,8 @@
                             min="1"
                             max="720"
                             :value="old('jam_edit_penjaga', $nilaiAktif['jam_edit_penjaga'] ?? '24')"
-                            :required="true"
-                            hint="Contoh: 24 jam (1 hari) atau 168 jam (7 hari) sejak catatan dibuat."
+                            placeholder="Kosongkan jika tanpa batas"
+                            hint="Kosongkan jika tanpa batas waktu edit. Contoh: 24 jam (1 hari) atau 168 jam (7 hari) sejak catatan dibuat."
                         />
                     </div>
 

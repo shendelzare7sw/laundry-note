@@ -78,6 +78,10 @@ class PengaturanService
                 ->get(['kunci', 'nilai']);
 
             foreach ($globalRows as $row) {
+                if ($row->kunci === 'nama_properti' && is_string($namaProperti) && $namaProperti !== '') {
+                    continue;
+                }
+
                 $hasil[$row->kunci] = (string) $row->nilai;
             }
 

@@ -76,8 +76,13 @@ class LaundryPolicy
             return false;
         }
 
-        $jamBatas = max(1, (int) $this->pengaturanService->nilai($laundry->properti_id, 'jam_edit_penjaga', null, '24'));
+        $nilaiJam = trim((string) ($this->pengaturanService->nilai($laundry->properti_id, 'jam_edit_penjaga', null, '24') ?? ''));
 
-        return $laundry->created_at->copy()->addHours($jamBatas)->isFuture();
+        // Kosong / 0 berarti tanpa batas waktu edit bagi penjaga.
+        if ($nilaiJam === '' || (int) $nilaiJam <= 0) {
+            return true;
+        }
+
+        return $laundry->created_at->copy()->addHours((int) $nilaiJam)->isFuture();
     }
 }

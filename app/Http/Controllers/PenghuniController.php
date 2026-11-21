@@ -355,6 +355,12 @@ class PenghuniController extends Controller
             ? "Penyesuaian manual bulan {$bulan} dikembalikan ke hitungan otomatis."
             : "Penyesuaian manual tagihan lewat kuota bulan {$bulan} berhasil disimpan.";
 
+        if ($request->input('kembali_ke') === 'laporan') {
+            return redirect()
+                ->back()
+                ->with('toast', ['tipe' => 'ok', 'pesan' => $pesan]);
+        }
+
         return redirect()
             ->route('penghuni.show', ['penghuni' => $penghuni, 'bulan' => $bulan])
             ->with('toast', ['tipe' => 'ok', 'pesan' => $pesan]);

@@ -154,35 +154,48 @@ class WhatsAppService
         $tagihanLewat = (int) ($kuota['tagihan_lewat_kuota'] ?? 0);
         $bayarTerpisah = (int) ($dataKartu['bayar_terpisah'] ?? ($kuota['bayar_terpisah'] ?? 0));
         $totalTagihan = $tagihanLewat + $bayarTerpisah;
+        $jumlahItem = (int) ($dataKartu['jumlah_item_terpisah'] ?? 0);
 
-        $barisTagihan = [];
+        $formatRpSpasi = fn (int $n): string => 'Rp '.number_format($n, 0, ',', '.');
+        $formatKgRingkas = fn (int $centi): string => $this->hargaService->dariCentiKg($centi, true);
+
+        // Hanya tampilkan komponen yang benar-benar ditagihkan (tagihan lewat kuota > 0 dan/atau bayar terpisah > 0).
+        // Kelebihan di bawah toleransi (Rp0) dan biaya utama kuota gratis tidak dimasukkan ke tagihan WA.
+        $blokTagihan = [];
 
         if ($tagihanLewat > 0) {
-            $labelSesuai = ($kuota['nominal_penyesuaian'] ?? null) !== null ? ' (disesuaikan)' : '';
-            $barisTagihan[] = 'Tagihan lewat kuota '.$this->formatKg($kelebihanCenti).' kg'.$labelSesuai.': '.$this->formatRupiah($tagihanLewat);
-        } elseif ($kelebihanCenti > 0) {
-            $barisTagihan[] = 'Kelebihan kuota '.$this->formatKg($kelebihanCenti).' kg (di bawah toleransi, Rp0)';
+            $blokTagihan[] = implode("\n", [
+                '📦 Lewat Kuota Laundry',
+                'Kelebihan: '.$formatKgRingkas($kelebihanCenti).' kg',
+                'Biaya: '.$formatRpSpasi($tagihanLewat),
+            ]);
         }
 
         if ($bayarTerpisah > 0) {
-            $jumlahItem = (int) ($dataKartu['jumlah_item_terpisah'] ?? 0);
-            $suffixItem = $jumlahItem > 0 ? " ({$jumlahItem} item)" : '';
-            $barisTagihan[] = 'Bayar terpisah'.$suffixItem.': '.$this->formatRupiah($bayarTerpisah);
+            $barisTerpisah = ['🧺 Tagihan Terpisah'];
+            if ($jumlahItem > 0) {
+                $barisTerpisah[] = "Jumlah item: {$jumlahItem} item";
+            }
+            $barisTerpisah[] = 'Biaya: '.$formatRpSpasi($bayarTerpisah);
+            $blokTagihan[] = implode("\n", $barisTerpisah);
         }
+
+        $rincianTagihan = implode("\n\n", $blokTagihan);
 
         $pesan = $this->renderTemplate($template, [
             'nama' => $penghuni->nama,
             'kamar' => (string) ($dataKartu['label_kamar'] ?? '-'),
             'gedung' => $gedung,
             'periode' => $labelPeriode,
-            'rincian' => $barisRincian !== [] ? implode("\n", $barisRincian) : '• Belum ada catatan laundry',
+            'rincian' => $barisRincian !== [] ? implode("\n", $barisRincian) : '',
+            'rincian_tagihan' => $rincianTagihan,
             'kuota_terpakai' => $this->formatKg($terpakaiCenti),
             'kuota' => $this->formatKg($kuotaCenti),
             'sisa' => $this->formatKg($sisaCenti),
-            'lewat_kg' => $this->formatKg($kelebihanCenti),
-            'tagihan_lewat' => implode("\n", $barisTagihan),
-            'terpisah' => $this->formatRupiah($bayarTerpisah),
-            'total' => $this->formatRupiah($totalTagihan),
+            'lewat_kg' => $formatKgRingkas($kelebihanCenti),
+            'tagihan_lewat' => $rincianTagihan,
+            'terpisah' => $formatRpSpasi($bayarTerpisah),
+            'total' => $formatRpSpasi($totalTagihan),
         ]);
 
         $nomor = $this->normalisasiNomor($penghuni->no_wa);
@@ -190,7 +203,8 @@ class WhatsAppService
         return [
             'pesan' => $pesan,
             'nomor' => $nomor,
-            'url' => $this->tautan($nomor, $pesan),
+            'url' => $totalTagihan > 0 ? $this->tautan($nomor, $pesan) : null,
+            'total_tagihan' => $totalTagihan,
         ];
     }
 

@@ -571,19 +571,22 @@ document.addEventListener('alpine:init', () => {
             });
         },
         pratinjau(kode) {
+            const blokTagihan =
+                '📦 Lewat Kuota Laundry\nKelebihan: 3 kg\nBiaya: Rp 24.000\n\n🧺 Tagihan Terpisah\nJumlah item: 1 item\nBiaya: Rp 15.000';
             const contoh = {
                 '{nama}': 'Glenn',
                 '{kamar}': '302',
                 '{gedung}': this.gedung,
                 '{periode}': '1 Nov 2026 - 30 Nov 2026',
+                '{rincian_tagihan}': blokTagihan,
                 '{rincian}': '• 10 Nov 2026: 2,8 kg - Rp22.400\n• 10 Nov 2026 (Selimut): 1 item - Rp15.000',
                 '{kuota_terpakai}': '23,7',
                 '{kuota}': '20,0',
                 '{sisa}': '0,0',
-                '{lewat_kg}': '3,7',
-                '{tagihan_lewat}': 'Tagihan lewat kuota 3,7 kg: Rp24.000\nBayar terpisah (1 item): Rp15.000',
-                '{terpisah}': 'Rp15.000',
-                '{total}': 'Rp39.000',
+                '{lewat_kg}': '3',
+                '{tagihan_lewat}': blokTagihan,
+                '{terpisah}': 'Rp 15.000',
+                '{total}': 'Rp 39.000',
             };
             let hasil = String(this[kode] ?? '');
             for (const [k, v] of Object.entries(contoh)) {

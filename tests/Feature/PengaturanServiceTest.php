@@ -118,6 +118,15 @@ class PengaturanServiceTest extends TestCase
         // Tetap menghormati batas jam_edit_penjaga
         $this->travel(25)->hours();
         $this->assertFalse($policy->update($this->penjaga, $catatanAdmin->fresh()));
+
+        // Kosongkan jam_edit_penjaga -> tanpa batas waktu edit
+        $this->pengaturanService->simpanIzinPenjaga($this->properti, [
+            'jam_edit_penjaga' => '',
+            'penjaga_kelola_kontrak' => '1',
+            'penjaga_ubah_catatan_lain' => '1',
+        ], $this->admin);
+
+        $this->assertTrue($policy->update($this->penjaga, $catatanAdmin->fresh()));
     }
 
     public function test_simpan_dan_reset_template_whatsapp(): void

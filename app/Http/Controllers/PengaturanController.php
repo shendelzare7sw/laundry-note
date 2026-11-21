@@ -86,10 +86,14 @@ class PengaturanController extends Controller
         $propertiAktif = $this->propertiAktif();
         $data = $request->validated();
 
+        $jamEdit = $request->filled('jam_edit_penjaga')
+            ? (string) $data['jam_edit_penjaga']
+            : '';
+
         $this->pengaturanService->simpanIzinPenjaga(
             properti: $propertiAktif,
             nilaiBaru: [
-                'jam_edit_penjaga' => (string) $data['jam_edit_penjaga'],
+                'jam_edit_penjaga' => $jamEdit,
                 'penjaga_kelola_kontrak' => $request->boolean('penjaga_kelola_kontrak') ? '1' : '0',
                 'penjaga_ubah_catatan_lain' => $request->boolean('penjaga_ubah_catatan_lain') ? '1' : '0',
             ],

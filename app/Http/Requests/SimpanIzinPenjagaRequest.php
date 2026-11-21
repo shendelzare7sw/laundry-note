@@ -22,7 +22,7 @@ class SimpanIzinPenjagaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'jam_edit_penjaga' => ['required', 'integer', 'min:1', 'max:720'],
+            'jam_edit_penjaga' => ['nullable', 'integer', 'min:1', 'max:720'],
             'penjaga_kelola_kontrak' => ['nullable', 'boolean'],
             'penjaga_ubah_catatan_lain' => ['nullable', 'boolean'],
         ];

@@ -271,18 +271,112 @@
                                 </div>
 
                                 {{-- Batang Ringkasan Biaya --}}
+                                @php
+                                    $bolehEditTagihan = auth()->user()->can('sesuaikanKuota', $penghuni);
+                                    $punyaKelebihan = (int) ($kuota['kelebihan_centi'] ?? 0) > 0;
+                                    $adaTagihanLewat = (int) $kartu['tagihan_lewat_kuota'] > 0;
+                                    $sudahDisesuaikan = ($kuota['nominal_penyesuaian'] ?? null) !== null;
+                                    $totalTagihanWa = (int) ($kartu['wa_tagihan']['total_tagihan'] ?? 0);
+                                @endphp
                                 <div class="mt-2.5 space-y-1.5 text-xs font-bold">
                                     <div class="flex items-center justify-between rounded-xl bg-ok/10 px-3 py-2 text-ok">
                                         <span>Biaya utama</span>
                                         <span>Rp{{ number_format((int) $kartu['biaya_utama'], 0, ',', '.') }}</span>
                                     </div>
 
-                                    @if ((int) $kartu['tagihan_lewat_kuota'] > 0)
-                                        <div class="flex items-center justify-between rounded-xl bg-danger/10 px-3 py-2 text-danger">
-                                            <span>
-                                                Tagihan lewat kuota {{ $kuota['kelebihan_label'] }} kg{{ ($kuota['nominal_penyesuaian'] ?? null) !== null ? ' (disesuaikan)' : '' }}
-                                            </span>
-                                            <span>Rp{{ number_format((int) $kartu['tagihan_lewat_kuota'], 0, ',', '.') }}</span>
+                                    @if ($punyaKelebihan || $adaTagihanLewat)
+                                        <div
+                                            x-data="{ editTagihan: false }"
+                                            class="{{ $adaTagihanLewat ? '' : 'print:hidden' }}"
+                                        >
+                                            {{-- Tampilan normal batang merah (klik untuk edit langsung bila punya izin) --}}
+                                            <div
+                                                x-show="!editTagihan"
+                                                class="flex items-center justify-between gap-2 rounded-xl bg-danger/10 px-3 py-2 text-danger"
+                                            >
+                                                <span>
+                                                    Tagihan lewat kuota {{ $kuota['kelebihan_label'] }} kg
+                                                    @if ($sudahDisesuaikan)
+                                                        <span class="font-medium print:hidden">(disesuaikan)</span>
+                                                    @endif
+                                                </span>
+                                                <div class="flex items-center gap-2">
+                                                    <span>Rp{{ number_format((int) $kartu['tagihan_lewat_kuota'], 0, ',', '.') }}</span>
+                                                    @if ($bolehEditTagihan)
+                                                        <button
+                                                            type="button"
+                                                            x-on:click="editTagihan = true"
+                                                            aria-label="Ubah nominal tagihan lewat kuota {{ $penghuni->nama }}"
+                                                            class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-danger/15 text-danger hover:bg-danger hover:text-white print:hidden"
+                                                        >
+                                                            <i class="fas fa-pen text-[10px]" aria-hidden="true"></i>
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            {{-- Mode edit inline persis aplikasi lama (tidak ikut tercetak) --}}
+                                            @if ($bolehEditTagihan)
+                                                <div
+                                                    x-show="editTagihan"
+                                                    x-cloak
+                                                    class="space-y-2.5 rounded-xl border border-danger/25 bg-danger/10 p-3 text-danger print:hidden"
+                                                >
+                                                    <div class="flex items-center justify-between gap-2">
+                                                        <div class="flex items-center gap-2 text-xs font-bold">
+                                                            <i class="fas fa-receipt text-sm" aria-hidden="true"></i>
+                                                            <span>Tagihan lewat kuota {{ $kuota['kelebihan_label'] }} kg</span>
+                                                        </div>
+                                                        @if ($sudahDisesuaikan)
+                                                            <form method="POST" action="{{ route('penghuni.penyesuaian-kuota', $penghuni) }}">
+                                                                @csrf
+                                                                <input type="hidden" name="bulan" value="{{ $laporan['rentang']['bulan_acuan'] }}">
+                                                                <input type="hidden" name="reset" value="1">
+                                                                <input type="hidden" name="kembali_ke" value="laporan">
+                                                                <button type="submit" class="text-[11px] font-bold underline hover:text-maroon">
+                                                                    Reset otomatis
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    </div>
+
+                                                    <form
+                                                        method="POST"
+                                                        action="{{ route('penghuni.penyesuaian-kuota', $penghuni) }}"
+                                                        class="flex items-center gap-2"
+                                                    >
+                                                        @csrf
+                                                        <input type="hidden" name="bulan" value="{{ $laporan['rentang']['bulan_acuan'] }}">
+                                                        <input type="hidden" name="kembali_ke" value="laporan">
+                                                        <span class="text-xs font-bold text-danger">Rp</span>
+                                                        <input
+                                                            type="number"
+                                                            name="nominal"
+                                                            min="0"
+                                                            max="10000000"
+                                                            step="100"
+                                                            required
+                                                            value="{{ (int) $kartu['tagihan_lewat_kuota'] }}"
+                                                            aria-label="Nominal tagihan lewat kuota"
+                                                            class="min-h-10 w-full flex-1 rounded-xl border border-danger/25 bg-surface px-3 text-sm font-bold text-danger focus:border-danger focus:outline-none focus:ring-2 focus:ring-danger/20"
+                                                        >
+                                                        <button
+                                                            type="submit"
+                                                            class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-danger px-4 text-xs font-bold text-white hover:bg-danger/90"
+                                                        >
+                                                            OK
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            x-on:click="editTagihan = false"
+                                                            aria-label="Batal ubah tagihan"
+                                                            class="inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-xl text-danger hover:bg-danger/15"
+                                                        >
+                                                            <i class="fas fa-xmark text-sm" aria-hidden="true"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @endif
                                         </div>
                                     @endif
 
@@ -293,28 +387,30 @@
                                         </div>
                                     @endif
 
-                                    {{-- Tombol WhatsApp (Tidak Ikut Tercetak) --}}
-                                    <div class="pt-1 print:hidden">
-                                        @if (! empty($kartu['wa_tagihan']['url']))
-                                            <a
-                                                href="{{ $kartu['wa_tagihan']['url'] }}"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-ok px-3 text-xs font-bold text-white transition hover:bg-ok/90"
-                                            >
-                                                <i class="fab fa-whatsapp text-sm" aria-hidden="true"></i>
-                                                <span>Kirim tagihan via WhatsApp</span>
-                                            </a>
-                                        @else
-                                            <a
-                                                href="{{ route('penghuni.show', $penghuni) }}"
-                                                class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-sunken/70 px-3 text-xs font-medium text-muted hover:bg-sunken"
-                                            >
-                                                <i class="fab fa-whatsapp text-sm" aria-hidden="true"></i>
-                                                <span>Nomor WhatsApp belum diisi — lengkapi di profil</span>
-                                            </a>
-                                        @endif
-                                    </div>
+                                    {{-- Tombol WhatsApp (Hanya muncul bila ada tagihan > 0, tidak ikut tercetak) --}}
+                                    @if ($totalTagihanWa > 0)
+                                        <div class="pt-1 print:hidden">
+                                            @if (! empty($kartu['wa_tagihan']['url']))
+                                                <a
+                                                    href="{{ $kartu['wa_tagihan']['url'] }}"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-ok px-3 text-xs font-bold text-white transition hover:bg-ok/90"
+                                                >
+                                                    <i class="fab fa-whatsapp text-sm" aria-hidden="true"></i>
+                                                    <span>Kirim tagihan via WhatsApp</span>
+                                                </a>
+                                            @else
+                                                <a
+                                                    href="{{ route('penghuni.show', $penghuni) }}"
+                                                    class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-sunken/70 px-3 text-xs font-medium text-muted hover:bg-sunken"
+                                                >
+                                                    <i class="fab fa-whatsapp text-sm" aria-hidden="true"></i>
+                                                    <span>Nomor WhatsApp belum diisi — lengkapi di profil</span>
+                                                </a>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </div>
                             </article>
                         @endforeach
