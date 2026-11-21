@@ -315,8 +315,8 @@
                     @else
                         <div class="space-y-2">
                             @foreach ($catatanLaundry as $item)
-                                <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-sm {{ $isLewat ? 'border-danger/30 bg-danger/5' : 'border-line bg-alt' }}">
-                                    <div>
+                                <div class="flex flex-col gap-2.5 rounded-xl border px-3.5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between {{ $isLewat ? 'border-danger/30 bg-danger/5' : 'border-line bg-alt' }}">
+                                    <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="font-bold text-ink">{{ \Carbon\CarbonImmutable::parse($item->tanggal)->format('d/m/Y') }}</span>
                                             @if ($item->kamar)
@@ -327,20 +327,22 @@
                                             @endif
                                         </div>
                                         @if ($item->item->isNotEmpty() || $item->catatan)
-                                            <p class="mt-0.5 text-xs text-muted">
+                                            <p class="mt-1 text-xs text-muted">
                                                 {{ $item->item->isNotEmpty() ? 'Item terpisah: '.$item->ringkasanItem() : '' }}
                                                 {{ $item->item->isNotEmpty() && $item->catatan ? ' · ' : '' }}
                                                 {{ $item->catatan ?? '' }}
                                             </p>
                                         @endif
                                     </div>
-                                    <div class="flex items-center gap-2.5 text-right text-xs">
-                                        <div>
+                                    <div class="flex items-center justify-between gap-3 border-t border-line/60 pt-2 text-xs sm:shrink-0 sm:justify-end sm:border-t-0 sm:pt-0 sm:text-right">
+                                        <div class="space-y-0.5">
                                             @if ($item->berat_kg !== null)
                                                 <span class="block font-bold text-ink">{{ str_replace('.', ',', rtrim(rtrim((string) $item->berat_kg, '0'), '.')) }} kg</span>
                                             @endif
                                             @if ($item->biaya_utama !== null && $item->biaya_utama > 0)
                                                 <span class="block text-muted">Rp{{ number_format($item->biaya_utama, 0, ',', '.') }}</span>
+                                            @elseif ($item->berat_kg !== null)
+                                                <span class="block font-medium text-danger">Belum ada harga</span>
                                             @endif
                                             @if ($item->item_biaya > 0)
                                                 <span class="block font-bold text-on-gold">Terpisah Rp{{ number_format($item->item_biaya, 0, ',', '.') }}</span>
@@ -349,9 +351,10 @@
                                         @if (auth()->user()->can('update', $item))
                                             <a
                                                 href="{{ route('laundry.edit', $item) }}"
-                                                class="inline-flex min-h-9 items-center rounded-lg border border-line-strong bg-surface px-2.5 text-xs font-bold text-ink hover:bg-sunken"
+                                                class="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border border-line-strong bg-surface px-3 text-xs font-bold text-ink hover:bg-sunken"
                                             >
-                                                Ubah
+                                                <i class="fas fa-pen text-[10px]" aria-hidden="true"></i>
+                                                <span>Ubah</span>
                                             </a>
                                         @endif
                                     </div>
