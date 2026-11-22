@@ -92,6 +92,12 @@ class FcmPushService
 
                 if ($response->status() === 404 || str_contains($response->body(), 'UNREGISTERED')) {
                     DeviceToken::query()->where('token', $token)->delete();
+                } elseif ($response->failed()) {
+                    Log::warning('FCM push ditolak oleh Firebase.', [
+                        'audit_id' => $log->id,
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
                 }
             } catch (Throwable $e) {
                 Log::warning('Gagal mengirim FCM push notification.', [
