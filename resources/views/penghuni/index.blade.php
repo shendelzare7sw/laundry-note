@@ -35,7 +35,7 @@
 
         <x-kartu>
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <nav aria-label="Filter status penghuni" class="grid grid-cols-4 gap-1.5 sm:inline-flex sm:gap-2">
+                <nav aria-label="Filter status penghuni" class="tab-scroller max-w-full min-w-0 gap-2 pb-0.5 sm:inline-flex">
                     @foreach ([
                         'semua' => ['label' => 'Semua', 'jumlah' => $jumlahSemua],
                         'booking' => ['label' => 'Booking', 'jumlah' => $jumlahBooking],
@@ -45,9 +45,10 @@
                         @php $sedangAktif = $tab === $kodeTab; @endphp
                         <a
                             href="{{ route('penghuni.index', array_filter(['tab' => $kodeTab, 'cari' => $cari !== '' ? $cari : null, 'bulan' => $rentangBulan['bulan']])) }}"
-                            class="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-full border px-2 text-xs font-medium transition sm:min-h-11 sm:gap-2 sm:px-4 sm:text-sm {{ $sedangAktif ? 'border-maroon bg-maroon text-white' : 'border-line-strong bg-surface text-ink hover:bg-sunken' }}"
+                            @if ($sedangAktif) aria-current="page" @endif
+                            class="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-xs font-medium transition-colors sm:min-h-11 sm:gap-2 sm:px-4 sm:text-sm {{ $sedangAktif ? 'border-maroon bg-maroon text-white' : 'border-line-strong bg-surface text-ink hover:bg-sunken' }}"
                         >
-                            <span class="truncate">{{ $infoTab['label'] }}</span>
+                            <span>{{ $infoTab['label'] }}</span>
                             <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-bold sm:px-2 sm:text-xs {{ $sedangAktif ? 'bg-white/20 text-white' : 'bg-sunken text-muted' }}">
                                 {{ $infoTab['jumlah'] }}
                             </span>
@@ -123,7 +124,7 @@
                         };
                         $isLewat = ($kuota['status'] ?? 'normal') === 'lewat';
                     @endphp
-                    <x-kartu class="{{ $isLewat ? 'border-danger/35' : '' }}">
+                    <x-kartu class="kartu-daftar-ringan {{ $isLewat ? 'border-danger/35' : '' }}">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">

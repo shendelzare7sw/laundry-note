@@ -12,6 +12,9 @@
                 <img
                     src="{{ asset('img/favicon-tab-browser.jpg') }}"
                     alt="{{ config('app.name', 'Laundry-Kos') }}"
+                    width="48"
+                    height="48"
+                    decoding="async"
                     class="h-12 w-12 rounded-2xl bg-white object-contain p-1 shadow-xs"
                 >
                 <div>
@@ -63,6 +66,9 @@
                         <img
                             src="{{ asset('img/logo-app.jpg') }}"
                             alt="{{ config('app.name', 'Laundry-Kos') }}"
+                            width="112"
+                            height="112"
+                            fetchpriority="high"
                             class="h-24 w-24 rounded-xl object-contain sm:h-28 sm:w-28"
                         >
                     </div>

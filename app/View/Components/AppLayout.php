@@ -44,6 +44,7 @@ class AppLayout extends Component
                 $kamar = $penghuni->penempatanAktif?->kamar?->nomor ?? '-';
 
                 $daftarNotifikasi->push([
+                    'id' => "kuota_{$propertiAktif->id}_{$penghuni->id}_{$status}",
                     'prioritas' => $status === 'lewat' ? 1 : 2,
                     'persen' => $kuota['persen'] ?? 0,
                     'tipe' => $status === 'lewat' ? 'danger' : 'warn',
@@ -59,6 +60,7 @@ class AppLayout extends Component
 
             if ($user && $user->role->isGlobal() && ($propertiAktif->status !== 'aktif' || ! $propertiAktif->adminAktif()->exists())) {
                 $daftarNotifikasi->push([
+                    'id' => "setup_{$propertiAktif->id}_{$propertiAktif->status}",
                     'prioritas' => 0,
                     'persen' => 100,
                     'tipe' => 'info',
@@ -84,6 +86,7 @@ class AppLayout extends Component
 
             foreach ($propertiPerluSetup as $prop) {
                 $daftarNotifikasi->push([
+                    'id' => "prop_{$prop->id}_{$prop->status}",
                     'prioritas' => 0,
                     'persen' => 100,
                     'tipe' => 'info',

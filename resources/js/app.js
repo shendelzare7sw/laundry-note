@@ -2,22 +2,100 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import Alpine from 'alpinejs';
+import { initMarquee, remeasureMarquee } from './components/marquee';
+import { initTabScrollers } from './components/tab-scroller';
 
 const DRAFT_PREFIX = 'laundry_kos_draf:';
 
 document.addEventListener('alpine:init', () => {
     Alpine.data('appShell', () => ({
         drawerOpen: false,
+        drawerAnimating: false,
+        isDesktop: window.matchMedia('(min-width: 1024px)').matches,
+        _triggerEl: null,
+        _animTimer: null,
+        _touchStartX: 0,
+        _touchStartY: 0,
+        init() {
+            const mq = window.matchMedia('(min-width: 1024px)');
+            const onMediaChange = (event) => {
+                this.isDesktop = event.matches;
+                if (this.isDesktop && this.drawerOpen) {
+                    this.drawerOpen = false;
+                    this.drawerAnimating = false;
+                }
+            };
+            mq.addEventListener?.('change', onMediaChange);
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) {
+                    this.drawerOpen = false;
+                    this.drawerAnimating = false;
+                }
+            });
+        },
+        startDrawerAnimation() {
+            this.drawerAnimating = true;
+            clearTimeout(this._animTimer);
+            this._animTimer = setTimeout(() => {
+                this.drawerAnimating = false;
+            }, 280);
+        },
+        finishDrawerAnimation() {
+            clearTimeout(this._animTimer);
+            this.drawerAnimating = false;
+            if (this.drawerOpen && this.$refs.drawer) {
+                remeasureMarquee(this.$refs.drawer);
+            }
+        },
+        openDrawer() {
+            if (this.isDesktop || this.drawerOpen) {
+                return;
+            }
+            this._triggerEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            this.startDrawerAnimation();
+            this.drawerOpen = true;
+            this.$nextTick(() => {
+                this.$refs.drawerClose?.focus({ preventScroll: true });
+                if (this.$refs.drawer) {
+                    remeasureMarquee(this.$refs.drawer);
+                }
+            });
+        },
         toggleDrawer() {
-            this.drawerOpen = !this.drawerOpen;
-            this.syncScrollLock();
+            if (this.drawerOpen) {
+                this.closeDrawer();
+            } else {
+                this.openDrawer();
+            }
         },
         closeDrawer() {
+            if (!this.drawerOpen) {
+                return;
+            }
+            this.startDrawerAnimation();
             this.drawerOpen = false;
-            this.syncScrollLock();
+            const trigger = this._triggerEl;
+            this._triggerEl = null;
+            if (trigger && trigger.isConnected) {
+                this.$nextTick(() => trigger.focus({ preventScroll: true }));
+            }
         },
-        syncScrollLock() {
-            document.documentElement.classList.toggle('overflow-hidden', this.drawerOpen);
+        onDrawerTouchStart(event) {
+            if (!this.drawerOpen || this.isDesktop || event.touches.length !== 1) {
+                return;
+            }
+            this._touchStartX = event.touches[0].clientX;
+            this._touchStartY = event.touches[0].clientY;
+        },
+        onDrawerTouchEnd(event) {
+            if (!this.drawerOpen || this.isDesktop || event.changedTouches.length !== 1) {
+                return;
+            }
+            const dx = event.changedTouches[0].clientX - this._touchStartX;
+            const dy = event.changedTouches[0].clientY - this._touchStartY;
+            if (dx < -55 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+                this.closeDrawer();
+            }
         },
     }));
 
@@ -25,9 +103,80 @@ document.addEventListener('alpine:init', () => {
         open: false,
         toggle() {
             this.open = !this.open;
+            if (this.open) {
+                this.$nextTick(() => remeasureMarquee(this.$el));
+            }
         },
         close() {
             this.open = false;
+        },
+    }));
+
+    Alpine.data('notificationMenu', (storageKey = 'laundry_kos_notif', initialItems = []) => ({
+        open: false,
+        storageKey,
+        items: Array.isArray(initialItems) ? initialItems : [],
+        readIds: [],
+        dismissedIds: [],
+        init() {
+            try {
+                const raw = window.localStorage.getItem(this.storageKey);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    this.readIds = Array.isArray(parsed.readIds) ? parsed.readIds : [];
+                    this.dismissedIds = Array.isArray(parsed.dismissedIds) ? parsed.dismissedIds : [];
+                }
+            } catch {
+                this.readIds = [];
+                this.dismissedIds = [];
+            }
+        },
+        persist() {
+            try {
+                window.localStorage.setItem(
+                    this.storageKey,
+                    JSON.stringify({
+                        readIds: this.readIds,
+                        dismissedIds: this.dismissedIds,
+                    }),
+                );
+            } catch {
+                // Abaikan jika storage dibatasi browser
+            }
+        },
+        toggle() {
+            this.open = !this.open;
+        },
+        close() {
+            this.open = false;
+        },
+        get visibleItems() {
+            return this.items.filter((item) => !this.dismissedIds.includes(item.id));
+        },
+        get unreadCount() {
+            return this.visibleItems.filter((item) => !this.readIds.includes(item.id)).length;
+        },
+        isRead(id) {
+            return this.readIds.includes(id);
+        },
+        markRead(id) {
+            if (!this.readIds.includes(id)) {
+                this.readIds = [...this.readIds, id];
+                this.persist();
+            }
+        },
+        markAllRead() {
+            const visibleIds = this.visibleItems.map((item) => item.id);
+            if (visibleIds.length === 0) return;
+            this.readIds = Array.from(new Set([...this.readIds, ...visibleIds]));
+            this.persist();
+        },
+        clearAll() {
+            const visibleIds = this.visibleItems.map((item) => item.id);
+            if (visibleIds.length === 0) return;
+            this.dismissedIds = Array.from(new Set([...this.dismissedIds, ...visibleIds]));
+            this.readIds = Array.from(new Set([...this.readIds, ...visibleIds]));
+            this.persist();
         },
     }));
 
@@ -1402,7 +1551,7 @@ function initDirtyFormGuard() {
         true
     );
 
-    window.addEventListener('beforeunload', (event) => {
+    const beforeUnloadHandler = (event) => {
         if (sedangSubmitResmi) {
             return;
         }
@@ -1410,7 +1559,25 @@ function initDirtyFormGuard() {
             event.preventDefault();
             event.returnValue = '';
         }
-    });
+    };
+
+    let beforeUnloadAktif = false;
+    const pastikanBeforeUnload = () => {
+        if (!beforeUnloadAktif) {
+            beforeUnloadAktif = true;
+            window.addEventListener('beforeunload', beforeUnloadHandler);
+        }
+    };
+
+    // Hanya aktifkan beforeunload saat pengguna mulai menyunting formulir (atau draf dipulihkan)
+    // agar Back-Forward Cache (bfcache) browser mobile tetap aktif saat berpindah halaman.
+    for (const form of trackedForms) {
+        if (form.querySelector('[data-draft-banner]')) {
+            pastikanBeforeUnload();
+        }
+        form.addEventListener('input', pastikanBeforeUnload, { once: true, passive: true });
+        form.addEventListener('change', pastikanBeforeUnload, { once: true, passive: true });
+    }
 }
 
 function initConfirmDialog() {
@@ -1653,6 +1820,8 @@ function initLaporanActions() {
 
 window.Alpine = Alpine;
 Alpine.start();
+initMarquee();
+initTabScrollers();
 initInlineValidation();
 initDirtyFormGuard();
 initConfirmDialog();

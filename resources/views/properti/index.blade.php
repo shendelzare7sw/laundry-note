@@ -13,7 +13,7 @@
     <div class="space-y-5">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             @forelse ($daftarPropertiKelola as $item)
-                <article class="flex flex-col justify-between rounded-2xl border border-line bg-surface p-4 shadow-xs transition hover:border-line-strong">
+                <article class="flex flex-col justify-between rounded-2xl border border-line bg-surface p-4 shadow-xs transition-colors hover:border-line-strong">
                     <div class="flex items-start gap-3.5">
                         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-maroon/10 text-maroon">
                             <i class="fas fa-building text-lg" aria-hidden="true"></i>

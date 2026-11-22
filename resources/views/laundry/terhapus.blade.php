@@ -2,10 +2,11 @@
     <x-slot:aksiHeader>
         <a
             href="{{ route('laundry.index') }}"
-            class="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 text-xs font-bold text-ink hover:bg-sunken sm:text-sm"
+            class="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-bold text-ink hover:bg-sunken sm:gap-2 sm:px-4 sm:text-sm"
         >
             <i class="fas fa-arrow-left text-xs" aria-hidden="true"></i>
-            <span>Kembali ke Laundry</span>
+            <span class="hidden sm:inline">Kembali ke Laundry</span>
+            <span class="sm:hidden">Kembali</span>
         </a>
     </x-slot:aksiHeader>
 
@@ -32,7 +33,7 @@
                         };
                     @endphp
 
-                    <article id="m-{{ $loop->iteration }}" class="scroll-mt-20 rounded-2xl border border-line bg-surface p-4 shadow-xs">
+                    <article id="m-{{ $loop->iteration }}" class="kartu-daftar-ringan scroll-mt-20 rounded-2xl border border-line bg-surface p-4 shadow-xs">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0 flex-1 space-y-1">
                                 <div class="flex flex-wrap items-center gap-2">

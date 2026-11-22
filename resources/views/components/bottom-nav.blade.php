@@ -20,7 +20,8 @@
 
 <nav
     aria-label="Navigasi bawah"
-    class="bottom-nav-safe fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur print:hidden lg:hidden"
+    x-bind:inert="drawerOpen && !isDesktop"
+    class="bottom-nav-bar bottom-nav-safe fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface shadow-[0_-1px_6px_rgb(28_28_28/0.04)] print:hidden lg:hidden"
 >
     <ul class="grid {{ $gridCols }}">
         @foreach ($menuBawah as $item)
@@ -40,6 +41,8 @@
             <button
                 type="button"
                 x-on:click="toggleDrawer"
+                aria-controls="sidebar-nav"
+                x-bind:aria-expanded="!isDesktop && drawerOpen ? 'true' : 'false'"
                 class="flex min-h-14 w-full flex-col items-center justify-center gap-1 px-1 py-1.5 text-[11px] font-medium text-muted transition-colors hover:text-ink"
             >
                 <i class="fas fa-bars text-base" aria-hidden="true"></i>

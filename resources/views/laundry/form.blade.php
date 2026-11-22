@@ -93,7 +93,7 @@
                         <div class="grid grid-cols-3 gap-2">
                             @foreach (\App\Models\Laundry::DAFTAR_JENIS as $kodeJenis => $labelJenis)
                                 <label
-                                    class="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 text-center text-xs font-bold transition-colors focus-within:ring-2 focus-within:ring-maroon/30 sm:text-sm"
+                                    class="flex min-h-11 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-2 text-center text-xs font-bold transition-colors focus-within:ring-2 focus-within:ring-maroon/30 sm:px-3 sm:text-sm"
                                     :class="jenis === '{{ $kodeJenis }}' ? 'border-maroon bg-maroon text-white shadow-xs' : 'border-line-strong bg-alt text-ink hover:bg-sunken'"
                                 >
                                     <input

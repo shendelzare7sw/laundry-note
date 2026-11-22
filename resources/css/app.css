@@ -52,6 +52,154 @@
     h1, h2, h3 {
         text-wrap: balance;
     }
+
+    a,
+    button,
+    summary,
+    [role='button'],
+    input,
+    select,
+    textarea {
+        touch-action: manipulation;
+    }
+
+    a,
+    button {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+@property --fade-start {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+}
+
+@property --fade-end {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+}
+
+@keyframes reveal-fade-start {
+    to {
+        --fade-start: var(--fade-size);
+    }
+}
+
+@keyframes hide-fade-end {
+    from {
+        --fade-end: var(--fade-size);
+    }
+}
+
+@layer components {
+    .drawer-backdrop {
+        transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .drawer-backdrop.is-animating {
+        will-change: opacity;
+    }
+
+    .drawer-panel {
+        contain: layout style paint;
+        transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .drawer-panel.is-animating {
+        will-change: transform;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .drawer-backdrop,
+        .drawer-panel {
+            transition-duration: 1ms;
+        }
+    }
+
+    .bottom-nav-bar {
+        contain: layout style paint;
+    }
+
+    .panel-mengambang {
+        contain: layout style;
+    }
+
+    .marquee-aktif {
+        text-overflow: clip;
+        mask:
+            linear-gradient(black, black) no-clip subtract,
+            linear-gradient(to right, transparent, black) 100% 0 / 16px 100% no-repeat no-clip;
+    }
+
+    .marquee-track {
+        display: inline-block;
+        white-space: nowrap;
+        will-change: transform;
+    }
+
+    .tab-scroller {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: inline proximity;
+        scroll-padding-inline: 2rem;
+        scrollbar-width: none;
+        --fade-size: 2rem;
+        --fade-dir: right;
+        --fade-start-pos: 0;
+        --fade-end-pos: 100%;
+        mask:
+            linear-gradient(black, black) no-clip subtract,
+            linear-gradient(to var(--fade-dir), black, transparent) var(--fade-start-pos) 0 / var(--fade-start) 100% no-repeat no-clip,
+            linear-gradient(to var(--fade-dir), transparent, black) var(--fade-end-pos) 0 / var(--fade-end) 100% no-repeat no-clip;
+    }
+
+    .tab-scroller::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab-scroller > * {
+        flex: none;
+        scroll-snap-align: start;
+    }
+
+    @supports (animation-timeline: scroll()) {
+        .tab-scroller {
+            animation: reveal-fade-start linear both, hide-fade-end linear both;
+            animation-timeline: scroll(self inline);
+            animation-range: 0 var(--fade-size), calc(100% - var(--fade-size)) 100%;
+        }
+    }
+
+    @supports not (animation-timeline: scroll()) {
+        .tab-scroller {
+            transition: --fade-start 0.2s ease, --fade-end 0.2s ease;
+        }
+
+        .tab-scroller.more-start {
+            --fade-start: var(--fade-size);
+        }
+
+        .tab-scroller.more-end {
+            --fade-end: var(--fade-size);
+        }
+    }
+
+    @media screen {
+        .kartu-daftar-ringan {
+            content-visibility: auto;
+            contain-intrinsic-block-size: auto 10.5rem;
+        }
+
+        .kartu-laporan {
+            content-visibility: auto;
+            contain-intrinsic-block-size: auto 22rem;
+        }
+    }
 }
 
 [x-cloak] {
@@ -138,6 +286,12 @@ progress.kuota-progress::-moz-progress-bar {
 
     main {
         padding: 0 !important;
+    }
+
+    .kartu-daftar-ringan,
+    .kartu-laporan {
+        content-visibility: visible !important;
+        contain-intrinsic-block-size: auto none !important;
     }
 
     .kartu-laporan {

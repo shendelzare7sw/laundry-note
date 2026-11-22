@@ -57,7 +57,7 @@
         {{-- Filter Periode & Pencarian --}}
         <search aria-label="Filter catatan laundry">
             <div class="rounded-2xl border border-line bg-surface p-3.5 shadow-xs space-y-3">
-                <div class="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:gap-2" role="group" aria-label="Pilih periode waktu">
+                <div class="tab-scroller max-w-full min-w-0 gap-2 pb-0.5 sm:flex-wrap" role="group" aria-label="Pilih periode waktu">
                     @foreach ($pilihanPeriode as $kode => $label)
                         @php
                             $tautanFilter = array_filter([
@@ -72,9 +72,9 @@
                         <a
                             href="{{ route('laundry.index', $tautanFilter) }}"
                             @if ($sedangDipilih) aria-current="true" @endif
-                            class="inline-flex min-h-10 min-w-0 items-center justify-center rounded-full border px-2 text-center text-xs font-bold transition-colors sm:px-3.5 {{ $sedangDipilih ? 'border-maroon bg-maroon text-white' : 'border-line-strong bg-alt text-muted hover:bg-sunken hover:text-ink' }}"
+                            class="inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-3.5 text-center text-xs font-bold transition-colors {{ $sedangDipilih ? 'border-maroon bg-maroon text-white' : 'border-line-strong bg-alt text-muted hover:bg-sunken hover:text-ink' }}"
                         >
-                            <span class="truncate">{{ $label }}</span>
+                            <span>{{ $label }}</span>
                         </a>
                     @endforeach
                 </div>
@@ -257,7 +257,7 @@
 
                     <article
                         id="m-{{ $loop->iteration }}"
-                        class="scroll-mt-20 rounded-2xl border p-4 shadow-xs transition {{ $isLewat ? 'border-danger/40 border-l-4 border-l-danger bg-danger/5' : 'border-line bg-surface' }} {{ $bolehUbah ? 'hover:border-maroon/40' : '' }}"
+                        class="kartu-daftar-ringan scroll-mt-20 rounded-2xl border p-4 shadow-xs transition-colors {{ $isLewat ? 'border-danger/40 border-l-4 border-l-danger bg-danger/5' : 'border-line bg-surface' }} {{ $bolehUbah ? 'hover:border-maroon/40' : '' }}"
                     >
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="flex min-w-0 flex-1 items-start gap-3">

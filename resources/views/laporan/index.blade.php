@@ -3,7 +3,8 @@
         <button
             type="button"
             data-modal-open="modal-rekap-wa"
-            class="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-ok px-3 text-xs font-bold text-white hover:bg-ok/90 sm:px-3.5 sm:text-sm"
+            aria-label="Rekap WhatsApp"
+            class="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-ok px-2.5 text-xs font-bold text-white hover:bg-ok/90 sm:px-3.5 sm:text-sm"
         >
             <i class="fab fa-whatsapp text-sm" aria-hidden="true"></i>
             <span class="hidden sm:inline">Rekap WA</span>
@@ -11,7 +12,8 @@
 
         <a
             href="{{ route('laporan.csv', request()->query()) }}"
-            class="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-line-strong bg-surface px-3 text-xs font-bold text-ink hover:bg-sunken sm:px-3.5 sm:text-sm"
+            aria-label="Unduh CSV"
+            class="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-line-strong bg-surface px-2.5 text-xs font-bold text-ink hover:bg-sunken sm:px-3.5 sm:text-sm"
         >
             <i class="fas fa-file-csv text-xs text-maroon" aria-hidden="true"></i>
             <span class="hidden sm:inline">CSV</span>
@@ -20,7 +22,8 @@
         <button
             type="button"
             data-print-laporan
-            class="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-gold px-3 text-xs font-bold text-white hover:bg-gold-bright sm:px-4 sm:text-sm"
+            aria-label="Cetak atau simpan PDF"
+            class="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-gold px-2.5 text-xs font-bold text-white hover:bg-gold-bright sm:px-4 sm:text-sm"
         >
             <i class="fas fa-print text-xs" aria-hidden="true"></i>
             <span class="hidden sm:inline">Cetak / PDF</span>
@@ -395,7 +398,7 @@
                                                     href="{{ $kartu['wa_tagihan']['url'] }}"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-ok px-3 text-xs font-bold text-white transition hover:bg-ok/90"
+                                                    class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-ok px-3 text-xs font-bold text-white transition-colors hover:bg-ok/90"
                                                 >
                                                     <i class="fab fa-whatsapp text-sm" aria-hidden="true"></i>
                                                     <span>Kirim tagihan via WhatsApp</span>
@@ -501,7 +504,7 @@
             <button
                 type="button"
                 data-print-laporan
-                class="inline-flex min-h-12 items-center gap-2 rounded-full bg-gold px-6 text-sm font-bold text-white shadow-lg transition hover:bg-gold-bright"
+                class="inline-flex min-h-12 items-center gap-2 rounded-full bg-gold px-6 text-sm font-bold text-white shadow-lg transition-colors hover:bg-gold-bright"
             >
                 <i class="fas fa-print text-sm" aria-hidden="true"></i>
                 <span>Cetak / Simpan PDF</span>
