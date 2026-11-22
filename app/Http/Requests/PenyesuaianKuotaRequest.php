@@ -19,11 +19,21 @@ class PenyesuaianKuotaRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $merge = [];
+
+        if ($this->has('reset')) {
+            $merge['reset'] = $this->boolean('reset') ? 1 : 0;
+        }
+
         if ($this->has('nominal') && is_string($this->input('nominal'))) {
             $teks = trim($this->input('nominal'));
             if (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $teks) === 1) {
-                $this->merge(['nominal' => str_replace('.', '', $teks)]);
+                $merge['nominal'] = str_replace('.', '', $teks);
             }
+        }
+
+        if ($merge !== []) {
+            $this->merge($merge);
         }
     }
 
@@ -35,7 +45,7 @@ class PenyesuaianKuotaRequest extends FormRequest
         return [
             'bulan' => ['required', 'regex:/^\d{4}-\d{2}$/'],
             'reset' => ['sometimes', 'boolean'],
-            'nominal' => ['nullable', 'required_unless:reset,1', 'integer', 'min:0', 'max:10000000'],
+            'nominal' => ['nullable', 'required_unless:reset,1,true', 'integer', 'min:0', 'max:10000000'],
             'catatan' => ['nullable', 'string', 'max:255'],
         ];
     }

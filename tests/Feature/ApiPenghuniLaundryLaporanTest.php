@@ -178,7 +178,27 @@ class ApiPenghuniLaundryLaporanTest extends TestCase
             ->assertJsonPath('data.kamar_nomor', '310')
             ->assertJsonPath('data.lewat_kuota', true);
 
-        // 4. Penyesuaian manual tagihan lewat kuota via API
+        // 4. Penyesuaian manual tagihan lewat kuota via API + uji reset boolean JSON (seperti payload Android)
+        $this->withToken($this->adminToken)
+            ->postJson("/api/v1/penghuni/{$penghuniId}/penyesuaian-kuota", [
+                'bulan' => '2026-10',
+                'nominal' => 20000,
+                'catatan' => 'Kesepakatan mobile',
+            ])
+            ->assertOk()
+            ->assertJsonPath('kuota.tagihan_lewat_kuota', 20000);
+
+        $this->withToken($this->adminToken)
+            ->postJson("/api/v1/penghuni/{$penghuniId}/penyesuaian-kuota", [
+                'bulan' => '2026-10',
+                'reset' => true,
+                'nominal' => null,
+            ])
+            ->assertOk()
+            ->assertJsonPath('kuota.nominal_penyesuaian', null)
+            ->assertJsonPath('kuota.tagihan_lewat_kuota', 24000);
+
+        // Set lagi ke 20.000 untuk verifikasi laporan & WA di langkah 5-6
         $this->withToken($this->adminToken)
             ->postJson("/api/v1/penghuni/{$penghuniId}/penyesuaian-kuota", [
                 'bulan' => '2026-10',
