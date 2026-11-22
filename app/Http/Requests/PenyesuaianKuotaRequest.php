@@ -17,6 +17,16 @@ class PenyesuaianKuotaRequest extends FormRequest
             && $user->can('sesuaikanKuota', $penghuni);
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('nominal') && is_string($this->input('nominal'))) {
+            $teks = trim($this->input('nominal'));
+            if (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $teks) === 1) {
+                $this->merge(['nominal' => str_replace('.', '', $teks)]);
+            }
+        }
+    }
+
     /**
      * @return array<string, array<int, mixed>>
      */

@@ -353,13 +353,13 @@
                                                         <input type="hidden" name="kembali_ke" value="laporan">
                                                         <span class="text-xs font-bold text-danger">Rp</span>
                                                         <input
-                                                            type="number"
+                                                            type="text"
+                                                            inputmode="numeric"
                                                             name="nominal"
-                                                            min="0"
-                                                            max="10000000"
-                                                            step="100"
+                                                            pattern="[0-9.]+"
+                                                            data-rupiah-input
                                                             required
-                                                            value="{{ (int) $kartu['tagihan_lewat_kuota'] }}"
+                                                            value="{{ number_format((int) $kartu['tagihan_lewat_kuota'], 0, ',', '.') }}"
                                                             aria-label="Nominal tagihan lewat kuota"
                                                             class="min-h-10 w-full flex-1 rounded-xl border border-danger/25 bg-surface px-3 text-sm font-bold text-danger focus:border-danger focus:outline-none focus:ring-2 focus:ring-danger/20"
                                                         >

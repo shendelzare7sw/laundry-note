@@ -310,6 +310,7 @@ class LaundryController extends Controller
             'tarif_per_kg' => (int) ($semua['tarif_per_kg'] ?? 8000),
             'min_kg' => $minKg,
             'min_kg_centi' => $this->hargaService->keCentiKg($minKg),
+            'pembulatan' => (int) ($semua['pembulatan'] ?? 1000),
             'kuota_kg' => (string) ($semua['kuota_kg'] ?? '20'),
             'mode_kuota' => (string) ($semua['mode_kuota'] ?? 'penghuni'),
             'ambang_mendekati_persen' => (int) ($semua['ambang_mendekati_persen'] ?? 75),

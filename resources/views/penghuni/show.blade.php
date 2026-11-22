@@ -689,14 +689,21 @@
                 @csrf
                 <input type="hidden" name="bulan" value="{{ $kuotaBulanIni['bulan'] }}">
 
+                @php
+                    $nominalPenyesuaianAwal = old('nominal', $kuotaBulanIni['nominal_penyesuaian'] ?? $kuotaBulanIni['tagihan_otomatis']);
+                    $nominalPenyesuaianTampil = is_numeric($nominalPenyesuaianAwal)
+                        ? number_format((int) $nominalPenyesuaianAwal, 0, ',', '.')
+                        : $nominalPenyesuaianAwal;
+                @endphp
                 <x-field
                     label="Nominal Manual (Rupiah)"
                     name="nominal"
                     id="penyesuaian-nominal"
-                    type="number"
-                    min="0"
-                    step="100"
-                    :value="old('nominal', $kuotaBulanIni['nominal_penyesuaian'] ?? $kuotaBulanIni['tagihan_otomatis'])"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9.]+"
+                    data-rupiah-input
+                    :value="$nominalPenyesuaianTampil"
                     :required="true"
                 />
 

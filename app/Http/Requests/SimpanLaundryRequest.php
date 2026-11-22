@@ -37,10 +37,7 @@ class SimpanLaundryRequest extends FormRequest
         $jenis = (string) $this->input('jenis', 'penghuni');
         $berat = $this->normalisasiDesimal($this->input('berat_kg'));
 
-        $biayaRaw = $this->input('biaya_utama');
-        $biaya = $biayaRaw !== null && trim((string) $biayaRaw) !== ''
-            ? trim((string) $biayaRaw)
-            : null;
+        $biaya = $this->normalisasiRupiah($this->input('biaya_utama'));
 
         $itemInput = $this->input('item');
         $itemBersih = [];
@@ -52,11 +49,11 @@ class SimpanLaundryRequest extends FormRequest
                 }
 
                 $nama = trim((string) ($baris['nama'] ?? ''));
-                $biayaItemRaw = trim((string) ($baris['biaya'] ?? ''));
+                $biayaItemBersih = $this->normalisasiRupiah($baris['biaya'] ?? null);
                 $beratItem = $this->normalisasiDesimal($baris['berat_kg'] ?? null);
                 $jumlahRaw = trim((string) ($baris['jumlah'] ?? ''));
 
-                if ($nama === '' && $biayaItemRaw === '' && $beratItem === null) {
+                if ($nama === '' && $biayaItemBersih === null && $beratItem === null) {
                     continue;
                 }
 
@@ -64,7 +61,7 @@ class SimpanLaundryRequest extends FormRequest
                     'nama' => $nama,
                     'jumlah' => $jumlahRaw !== '' ? $jumlahRaw : '1',
                     'berat_kg' => $beratItem,
-                    'biaya' => $biayaItemRaw,
+                    'biaya' => $biayaItemBersih ?? '',
                 ];
             }
         }
@@ -199,6 +196,25 @@ class SimpanLaundryRequest extends FormRequest
         $teks = str_replace(',', '.', trim((string) $nilai));
 
         return $teks !== '' ? $teks : null;
+    }
+
+    private function normalisasiRupiah(mixed $nilai): ?string
+    {
+        if ($nilai === null) {
+            return null;
+        }
+
+        $teks = trim((string) $nilai);
+
+        if ($teks === '') {
+            return null;
+        }
+
+        if (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $teks) === 1) {
+            return str_replace('.', '', $teks);
+        }
+
+        return $teks;
     }
 
     private function propertiAktif(): ?Properti

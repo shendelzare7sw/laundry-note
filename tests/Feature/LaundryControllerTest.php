@@ -91,11 +91,12 @@ class LaundryControllerTest extends TestCase
             'tanggal' => '2026-11-20',
             'penghuni_id' => $this->penghuniA->id,
             'berat_kg' => '2,5',
+            'biaya_utama' => '20.000',
             'catatan' => 'Setoran pagi',
             'ref' => 'req-multi-1',
             'item' => [
-                ['nama' => 'Selimut', 'jumlah' => 1, 'biaya' => 15000],
-                ['nama' => 'Bed cover', 'jumlah' => 1, 'berat_kg' => '3,5', 'biaya' => 25000],
+                ['nama' => 'Selimut', 'jumlah' => 1, 'biaya' => '15.000'],
+                ['nama' => 'Bed cover', 'jumlah' => 1, 'berat_kg' => '3,5', 'biaya' => '25.000'],
                 ['nama' => '', 'jumlah' => '1', 'berat_kg' => '', 'biaya' => ''],
             ],
         ]);

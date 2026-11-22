@@ -33,6 +33,7 @@
         'biayaManual' => $biayaManualAwal,
         'tarifPerKg' => $aturanSaatIni['tarif_per_kg'],
         'minKgCenti' => $aturanSaatIni['min_kg_centi'],
+        'pembulatan' => $aturanSaatIni['pembulatan'] ?? 1000,
         'konfirmasiBeratBesar' => (bool) old('konfirmasi_berat_besar', false),
         'maksItem' => $maksItem,
         'item' => array_values($itemAwal),
@@ -330,7 +331,8 @@
                                 name="biaya_utama"
                                 type="text"
                                 inputmode="numeric"
-                                pattern="[0-9]*"
+                                pattern="[0-9.]*"
+                                data-rupiah-input
                                 data-pattern-message="Biaya utama harus berupa angka bulat rupiah."
                                 enterkeyhint="next"
                                 x-model="biayaUtama"
@@ -468,12 +470,13 @@
                                                 :name="'item[' + idx + '][biaya]'"
                                                 type="text"
                                                 inputmode="numeric"
-                                                pattern="[0-9]+"
+                                                pattern="[0-9.]+"
                                                 required
+                                                data-rupiah-input
                                                 data-field-label="Biaya item terpisah"
                                                 data-pattern-message="Harga item harus berupa angka bulat rupiah."
                                                 x-model="baris.biaya"
-                                                placeholder="15000"
+                                                placeholder="15.000"
                                                 class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3 text-base text-ink focus:border-maroon focus:outline-none sm:text-sm"
                                             >
                                         </div>

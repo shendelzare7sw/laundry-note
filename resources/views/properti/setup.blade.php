@@ -209,12 +209,18 @@
             {{-- Langkah 3: Aturan Laundry --}}
             <x-kartu judul="Langkah 3 · Aturan Laundry Properti" subjudul="Disalin dari nilai bawaan sistem dan dapat disesuaikan per properti">
                 <div class="grid gap-4 sm:grid-cols-3">
-                    <x-field label="Tarif per Kg (Rp)" name="tarif_per_kg" type="number" min="100" max="1000000" :value="$aturanSaatIni['tarif_per_kg'] ?? 8000" :required="true" />
+                    @php
+                        $setupTarifAwal = old('tarif_per_kg', $aturanSaatIni['tarif_per_kg'] ?? 8000);
+                        $setupTarifTampil = is_numeric($setupTarifAwal) ? number_format((int) $setupTarifAwal, 0, ',', '.') : $setupTarifAwal;
+                        $setupPembulatanAwal = old('pembulatan', $aturanSaatIni['pembulatan'] ?? 1000);
+                        $setupPembulatanTampil = is_numeric($setupPembulatanAwal) ? number_format((int) $setupPembulatanAwal, 0, ',', '.') : $setupPembulatanAwal;
+                    @endphp
+                    <x-field label="Tarif per Kg (Rp)" name="tarif_per_kg" type="text" inputmode="numeric" pattern="[0-9.]+" data-rupiah-input :value="$setupTarifTampil" :required="true" />
                     <x-field label="Minimum Berat (Kg)" name="min_kg" type="number" min="0" max="50" step="0.1" :value="$aturanSaatIni['min_kg'] ?? 2" :required="true" />
                     <x-field label="Kuota Bulanan (Kg)" name="kuota_kg" type="number" min="0" max="500" step="0.1" :value="$aturanSaatIni['kuota_kg'] ?? 20" :required="true" />
                     <x-field label="Ambang Mendekati (%)" name="ambang_mendekati_persen" type="number" min="1" max="100" :value="$aturanSaatIni['ambang_mendekati_persen'] ?? 75" :required="true" />
                     <x-field label="Toleransi Lewat Kuota (Kg)" name="toleransi_kg" type="number" min="0" max="50" step="0.1" :value="$aturanSaatIni['toleransi_kg'] ?? 1" :required="true" />
-                    <x-field label="Pembulatan Tagihan (Rp)" name="pembulatan" type="number" min="1" max="100000" :value="$aturanSaatIni['pembulatan'] ?? 1000" :required="true" />
+                    <x-field label="Pembulatan Biaya & Tagihan (Rp)" name="pembulatan" type="text" inputmode="numeric" pattern="[0-9.]+" data-rupiah-input :value="$setupPembulatanTampil" :required="true" />
 
                     <x-field label="Mode Kuota" name="mode_kuota" :required="true">
                         <select id="mode_kuota" name="mode_kuota" class="block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink">

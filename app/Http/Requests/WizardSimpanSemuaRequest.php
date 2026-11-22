@@ -30,13 +30,24 @@ class WizardSimpanSemuaRequest extends FormRequest
         $usernameStaf = Str::lower(trim((string) $this->input('username', '')));
         $passwordStaf = (string) $this->input('password', '');
 
-        $this->merge([
+        $mergeData = [
             'nama' => $nama,
             'nama_properti_laporan' => $namaLaporan !== '' ? $namaLaporan : $nama,
             'name' => $nameStaf !== '' ? $nameStaf : null,
             'username' => $usernameStaf !== '' ? $usernameStaf : null,
             'password' => $passwordStaf !== '' ? $passwordStaf : null,
-        ]);
+        ];
+
+        foreach (['tarif_per_kg', 'pembulatan'] as $kolom) {
+            if ($this->has($kolom) && is_string($this->input($kolom))) {
+                $teks = trim($this->input($kolom));
+                if (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $teks) === 1) {
+                    $mergeData[$kolom] = str_replace('.', '', $teks);
+                }
+            }
+        }
+
+        $this->merge($mergeData);
     }
 
     /**

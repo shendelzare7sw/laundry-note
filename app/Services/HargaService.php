@@ -59,12 +59,14 @@ class HargaService
     }
 
     /**
-     * Hitung biaya utama laundry untuk satu catatan berat (minimal min_kg), dibulatkan ke rupiah terdekat.
+     * Hitung biaya utama laundry untuk satu catatan berat (minimal min_kg),
+     * lalu bulatkan ke atas ke kelipatan pembulatan (default Rp1.000, mis. 2,1 kg × 8.000 = 16.800 -> 17.000).
      */
     public function hitungBiayaUtama(
         int|string|float $beratKg,
         int $tarifPerKg,
-        int|string|float $minKg = 2
+        int|string|float $minKg = 2,
+        int $pembulatan = 1000
     ): int {
         $beratCenti = $this->keCentiKg($beratKg);
 
@@ -74,12 +76,13 @@ class HargaService
 
         $minCenti = $this->keCentiKg($minKg);
         $beratDihitungCenti = max($beratCenti, $minCenti);
+        $nominalMentah = intdiv(($beratDihitungCenti * $tarifPerKg) + 50, 100);
 
-        return intdiv(($beratDihitungCenti * $tarifPerKg) + 50, 100);
+        return $this->bulatkanRupiah($nominalMentah, $pembulatan);
     }
 
     /**
-     * Bulatkan nominal rupiah secara half-up ke kelipatan pembulatan (mis. 1000).
+     * Bulatkan nominal rupiah ke atas ke kelipatan pembulatan (mis. 1000).
      */
     public function bulatkanRupiah(int $nominal, int $kelipatan = 1000): int
     {
@@ -91,7 +94,7 @@ class HargaService
             return $nominal;
         }
 
-        return intdiv($nominal + intdiv($kelipatan, 2), $kelipatan) * $kelipatan;
+        return intdiv($nominal + $kelipatan - 1, $kelipatan) * $kelipatan;
     }
 
     /**

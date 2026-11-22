@@ -15,6 +15,18 @@ class WizardAturanRequest extends FormRequest
         return $user !== null && $properti !== null && $user->can('update', $properti);
     }
 
+    protected function prepareForValidation(): void
+    {
+        foreach (['tarif_per_kg', 'pembulatan'] as $kolom) {
+            if ($this->has($kolom) && is_string($this->input($kolom))) {
+                $teks = trim($this->input($kolom));
+                if (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $teks) === 1) {
+                    $this->merge([$kolom => str_replace('.', '', $teks)]);
+                }
+            }
+        }
+    }
+
     /**
      * @return array<string, array<int, mixed>>
      */

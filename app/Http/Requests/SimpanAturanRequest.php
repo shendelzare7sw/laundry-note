@@ -42,5 +42,14 @@ class SimpanAturanRequest extends FormRequest
                 $this->merge([$kolom => str_replace(',', '.', trim($this->input($kolom)))]);
             }
         }
+
+        foreach (['tarif_per_kg', 'pembulatan'] as $kolom) {
+            if ($this->has($kolom) && is_string($this->input($kolom))) {
+                $teks = trim($this->input($kolom));
+                if (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $teks) === 1) {
+                    $this->merge([$kolom => str_replace('.', '', $teks)]);
+                }
+            }
+        }
     }
 }

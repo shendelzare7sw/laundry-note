@@ -90,14 +90,21 @@
                     </div>
 
                     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        @php
+                            $tarifPerKgAwal = old('tarif_per_kg', $nilaiAktif['tarif_per_kg'] ?? '8000');
+                            $tarifPerKgTampil = is_numeric($tarifPerKgAwal)
+                                ? number_format((int) $tarifPerKgAwal, 0, ',', '.')
+                                : $tarifPerKgAwal;
+                        @endphp
                         <x-field
                             label="Tarif per Kg (Rp)"
                             name="tarif_per_kg"
                             id="aturan-tarif"
-                            type="number"
-                            min="100"
-                            step="100"
-                            :value="old('tarif_per_kg', $nilaiAktif['tarif_per_kg'] ?? '8000')"
+                            type="text"
+                            inputmode="numeric"
+                            pattern="[0-9.]+"
+                            data-rupiah-input
+                            :value="$tarifPerKgTampil"
                             :required="true"
                         />
 
@@ -143,7 +150,7 @@
                             hint="Tagihan lewat kuota dikenakan bila kelebihan ≥ nilai ini."
                         />
 
-                        <x-field label="Pembulatan Tagihan (Rp)" name="pembulatan" id="aturan-pembulatan" :required="true">
+                        <x-field label="Pembulatan Biaya & Tagihan (Rp)" name="pembulatan" id="aturan-pembulatan" :required="true">
                             @php $pembulatanAktif = (string) old('pembulatan', $nilaiAktif['pembulatan'] ?? '1000'); @endphp
                             <select
                                 id="aturan-pembulatan"

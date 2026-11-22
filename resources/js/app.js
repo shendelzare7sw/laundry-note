@@ -7,6 +7,69 @@ import { initTabScrollers } from './components/tab-scroller';
 
 const DRAFT_PREFIX = 'laundry_kos_draf:';
 
+const parseRibuanInput = (nilai) => String(nilai ?? '').replace(/\D/g, '');
+
+const formatRibuanInput = (nilai) => {
+    const digits = parseRibuanInput(nilai);
+    if (digits === '') {
+        return '';
+    }
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
+const bulatkanRupiahKeAtas = (nominal, kelipatan = 1000) => {
+    const angka = Math.trunc(Number(nominal) || 0);
+    if (angka <= 0) {
+        return 0;
+    }
+    const step = Math.trunc(Number(kelipatan) || 1);
+    if (step <= 1) {
+        return angka;
+    }
+    return Math.ceil(angka / step) * step;
+};
+
+const terapkanFormatRupiahPadaInput = (el) => {
+    if (!(el instanceof HTMLInputElement)) {
+        return;
+    }
+    const lama = el.value;
+    const posKursor = typeof el.selectionStart === 'number' ? el.selectionStart : lama.length;
+    const digitSebelumKursor = lama.slice(0, posKursor).replace(/\D/g, '').length;
+    const terformat = formatRibuanInput(lama);
+
+    if (terformat === lama) {
+        return;
+    }
+
+    el.value = terformat;
+
+    if (document.activeElement === el && typeof el.setSelectionRange === 'function') {
+        let posisiBaru = 0;
+        let digitTerlihat = 0;
+        while (posisiBaru < terformat.length && digitTerlihat < digitSebelumKursor) {
+            if (/\d/.test(terformat[posisiBaru])) {
+                digitTerlihat++;
+            }
+            posisiBaru++;
+        }
+        el.setSelectionRange(posisiBaru, posisiBaru);
+    }
+};
+
+document.addEventListener('input', (event) => {
+    const target = event.target;
+    if (target instanceof HTMLInputElement && target.hasAttribute('data-rupiah-input')) {
+        terapkanFormatRupiahPadaInput(target);
+    }
+}, true);
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('input[data-rupiah-input]').forEach((el) => {
+        terapkanFormatRupiahPadaInput(el);
+    });
+});
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('appShell', () => ({
         drawerOpen: false,
@@ -326,11 +389,12 @@ document.addEventListener('alpine:init', () => {
         indeksSorot: -1,
         daftarPenghuni: Array.isArray(awal.daftarPenghuni) ? awal.daftarPenghuni : [],
         beratKg: awal.beratKg ?? '',
-        biayaUtama: awal.biayaUtama ?? '',
+        biayaUtama: formatRibuanInput(awal.biayaUtama ?? ''),
         biayaManual: Boolean(awal.biayaManual),
         biayaOtomatis: awal.biayaOtomatis ?? null,
         tarifPerKg: Number(awal.tarifPerKg ?? 8000),
         minKgCenti: Number(awal.minKgCenti ?? 200),
+        pembulatan: Number(awal.pembulatan ?? 1000),
         konfirmasiBeratBesar: Boolean(awal.konfirmasiBeratBesar),
         maksItem: Number(awal.maksItem ?? 10),
         nextKey: 1,
@@ -449,7 +513,7 @@ document.addEventListener('alpine:init', () => {
                 nama: String(baris.nama ?? ''),
                 jumlah: Number(baris.jumlah ?? 1) || 1,
                 berat_kg: String(baris.berat_kg ?? ''),
-                biaya: baris.biaya !== undefined && baris.biaya !== null ? String(baris.biaya) : '',
+                biaya: baris.biaya !== undefined && baris.biaya !== null ? formatRibuanInput(baris.biaya) : '',
             };
         },
         keCentiKg(str) {
@@ -474,7 +538,8 @@ document.addEventListener('alpine:init', () => {
                 return null;
             }
             const beratDihitung = Math.max(beratCenti, this.minKgCenti);
-            return Math.floor((beratDihitung * this.tarifPerKg + 50) / 100);
+            const mentah = Math.floor((beratDihitung * this.tarifPerKg + 50) / 100);
+            return bulatkanRupiahKeAtas(mentah, this.pembulatan);
         },
         hitungUlangOtomatis(isiBiaya = true) {
             const beratCenti = this.keCentiKg(this.beratKg);
@@ -488,8 +553,8 @@ document.addEventListener('alpine:init', () => {
                 }
                 return;
             }
-            if (!this.biayaManual || this.biayaUtama.trim() === '') {
-                this.biayaUtama = String(this.biayaOtomatis ?? '');
+            if (!this.biayaManual || parseRibuanInput(this.biayaUtama) === '') {
+                this.biayaUtama = this.biayaOtomatis !== null ? formatRibuanInput(this.biayaOtomatis) : '';
             }
         },
         saatUbahJenis() {
@@ -508,16 +573,17 @@ document.addEventListener('alpine:init', () => {
             this.debounceTimer = setTimeout(() => this.muatInfoKuota(false), 250);
         },
         saatUbahBiayaManual() {
-            const teks = String(this.biayaUtama ?? '').trim();
-            if (teks === '') {
+            const digits = parseRibuanInput(this.biayaUtama);
+            this.biayaUtama = formatRibuanInput(digits);
+            if (digits === '') {
                 this.biayaManual = false;
                 return;
             }
-            this.biayaManual = this.biayaOtomatis === null || Number(teks) !== Number(this.biayaOtomatis);
+            this.biayaManual = this.biayaOtomatis === null || Number(digits) !== Number(this.biayaOtomatis);
         },
         kembalikanOtomatis() {
             this.biayaManual = false;
-            this.biayaUtama = this.biayaOtomatis !== null ? String(this.biayaOtomatis) : '';
+            this.biayaUtama = this.biayaOtomatis !== null ? formatRibuanInput(this.biayaOtomatis) : '';
         },
         saatUbahTanggal() {
             this.muatInfoKuota(true);
@@ -558,6 +624,7 @@ document.addEventListener('alpine:init', () => {
                 const data = await res.json();
                 this.tarifPerKg = Number(data.tarif_per_kg ?? this.tarifPerKg);
                 this.minKgCenti = Number(data.min_kg_centi ?? this.minKgCenti);
+                this.pembulatan = Number(data.pembulatan ?? this.pembulatan);
                 this.hitungUlangOtomatis(true);
                 this.kamarTerdeteksi = data.kamar ?? null;
                 this.infoKuota = data.kuota ?? null;
@@ -614,7 +681,7 @@ document.addEventListener('alpine:init', () => {
                 this.beratKg = String(data.berat_kg ?? '');
             }
             if ('biaya_utama' in data) {
-                this.biayaUtama = String(data.biaya_utama ?? '');
+                this.biayaUtama = formatRibuanInput(data.biaya_utama ?? '');
             }
             if ('konfirmasi_berat_besar' in data) {
                 this.konfirmasiBeratBesar = Boolean(data.konfirmasi_berat_besar);
@@ -658,7 +725,7 @@ document.addEventListener('alpine:init', () => {
         },
         get totalTerpisah() {
             return this.item.reduce((sum, baris) => {
-                const angka = Number.parseInt(String(baris.biaya ?? '').trim(), 10);
+                const angka = Number.parseInt(parseRibuanInput(baris.biaya), 10);
                 return sum + (Number.isFinite(angka) && angka > 0 ? angka : 0);
             }, 0);
         },
@@ -1046,7 +1113,7 @@ function initInlineValidation() {
                 }
             }
 
-            if (biayaEl && biayaEl.value.trim() !== '' && !/^\d+$/.test(biayaEl.value.trim())) {
+            if (biayaEl && biayaEl.value.trim() !== '' && !/^(?:\d+|\d{1,3}(?:\.\d{3})+)$/.test(biayaEl.value.trim())) {
                 setError(biayaEl, 'Biaya utama harus berupa angka bulat rupiah.');
             }
         }

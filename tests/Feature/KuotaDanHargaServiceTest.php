@@ -67,8 +67,14 @@ class KuotaDanHargaServiceTest extends TestCase
         $this->assertSame(16000, $harga->hitungBiayaUtama('1,5', 8000, 2));
         $this->assertSame(16000, $harga->hitungBiayaUtama(2.0, 8000, 2));
 
-        // 2,4 kg * Rp8.000 = Rp19.200
-        $this->assertSame(19200, $harga->hitungBiayaUtama('2,4', 8000, 2));
+        // 2,1 kg * Rp8.000 = 16.800 -> bulatkan ke atas ke ribuan = Rp17.000
+        $this->assertSame(17000, $harga->hitungBiayaUtama('2,1', 8000, 2));
+        // 2,4 kg * Rp8.000 = 19.200 -> bulatkan ke atas ke ribuan = Rp20.000
+        $this->assertSame(20000, $harga->hitungBiayaUtama('2,4', 8000, 2));
+        // 2,9 kg * Rp8.000 = 23.200 -> bulatkan ke atas ke ribuan = Rp24.000
+        $this->assertSame(24000, $harga->hitungBiayaUtama('2,9', 8000, 2));
+        // 3,0 kg * Rp8.000 = Rp24.000 (tepat kelipatan 1.000)
+        $this->assertSame(24000, $harga->hitungBiayaUtama('3,0', 8000, 2));
     }
 
     public function test_semua_skenario_kuota_dan_tagihan_sesuai_aturan_bisnis(): void
@@ -79,8 +85,8 @@ class KuotaDanHargaServiceTest extends TestCase
             ['nama' => 'Glenn 21kg', 'berat' => '21.00', 'terpisah' => 0, 'status' => 'lewat', 'toleransi' => false, 'otomatis' => 8000, 'total' => 8000],
             ['nama' => 'Under Toleransi', 'berat' => '20.50', 'terpisah' => 0, 'status' => 'lewat', 'toleransi' => true, 'otomatis' => 0, 'total' => 0],
             ['nama' => 'Dengan Selimut', 'berat' => '23.00', 'terpisah' => 15000, 'status' => 'lewat', 'toleransi' => false, 'otomatis' => 24000, 'total' => 39000],
-            ['nama' => 'Pembulatan Bawah', 'berat' => '25.30', 'terpisah' => 0, 'status' => 'lewat', 'toleransi' => false, 'otomatis' => 42000, 'total' => 42000],
-            ['nama' => 'Pembulatan Atas', 'berat' => '22.60', 'terpisah' => 0, 'status' => 'lewat', 'toleransi' => false, 'otomatis' => 21000, 'total' => 21000],
+            ['nama' => 'Pembulatan Atas 5.3kg', 'berat' => '25.30', 'terpisah' => 0, 'status' => 'lewat', 'toleransi' => false, 'otomatis' => 43000, 'total' => 43000],
+            ['nama' => 'Pembulatan Atas 2.6kg', 'berat' => '22.60', 'terpisah' => 0, 'status' => 'lewat', 'toleransi' => false, 'otomatis' => 21000, 'total' => 21000],
             ['nama' => 'Tepat 20kg', 'berat' => '20.00', 'terpisah' => 0, 'status' => 'mendekati', 'toleransi' => false, 'otomatis' => 0, 'total' => 0],
             ['nama' => 'Batas 75%', 'berat' => '15.00', 'terpisah' => 0, 'status' => 'mendekati', 'toleransi' => false, 'otomatis' => 0, 'total' => 0],
             ['nama' => 'Normal', 'berat' => '14.50', 'terpisah' => 0, 'status' => 'normal', 'toleransi' => false, 'otomatis' => 0, 'total' => 0],

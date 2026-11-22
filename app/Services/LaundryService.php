@@ -259,6 +259,7 @@ class LaundryService
             $beratKg,
             (int) ($aturan['tarif_per_kg'] ?? 8000),
             (string) ($aturan['min_kg'] ?? '2'),
+            (int) ($aturan['pembulatan'] ?? 1000),
         );
     }
 
@@ -280,6 +281,7 @@ class LaundryService
         $hasil = [
             'tarif_per_kg' => (int) ($aturan['tarif_per_kg'] ?? 8000),
             'min_kg' => (string) ($aturan['min_kg'] ?? '2'),
+            'pembulatan' => (int) ($aturan['pembulatan'] ?? 1000),
             'biaya_otomatis' => $beratCenti > 0
                 ? $this->biayaOtomatis($properti->id, $tanggal, $this->hargaService->dariCentiKg($beratCenti))
                 : null,

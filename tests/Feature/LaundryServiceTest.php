@@ -92,16 +92,17 @@ class LaundryServiceTest extends TestCase
 
         $manual = $this->laundry->catat($this->properti, [
             'jenis' => 'penghuni', 'tanggal' => '2026-11-10', 'penghuni_id' => $penghuni->id,
-            'berat_kg' => '2.4', 'biaya_utama' => 20000,
+            'berat_kg' => '2.4', 'biaya_utama' => 25000,
         ], $this->admin);
 
         $sama = $this->laundry->catat($this->properti, [
             'jenis' => 'penghuni', 'tanggal' => '2026-11-11', 'penghuni_id' => $penghuni->id,
-            'berat_kg' => '2.4', 'biaya_utama' => 19200,
+            'berat_kg' => '2.4', 'biaya_utama' => 20000,
         ], $this->admin);
 
-        $this->assertSame(20000, $manual->biaya_utama);
+        $this->assertSame(25000, $manual->biaya_utama);
         $this->assertTrue($manual->biaya_manual);
+        $this->assertSame(20000, $sama->biaya_utama);
         $this->assertFalse($sama->biaya_manual);
     }
 
@@ -237,7 +238,7 @@ class LaundryServiceTest extends TestCase
 
         $baru = $this->laundry->pratinjau($this->properti, '2026-11-10', $penghuni, '2,4');
         $this->assertSame('307', $baru['kamar']);
-        $this->assertSame(19200, $baru['biaya_otomatis']);
+        $this->assertSame(20000, $baru['biaya_otomatis']);
         $this->assertSame('18', $baru['kuota']['sebelum_kg']);
         $this->assertSame('20,4', $baru['kuota']['sesudah_kg']);
         $this->assertSame('lewat', $baru['kuota']['status']);
