@@ -89,6 +89,7 @@ class KuotaService
             ->where('penghuni_id', $penghuniModel->id)
             ->whereBetween('tanggal', [$rentang['awal'], $rentang['akhir']])
             ->selectRaw('COALESCE(SUM(berat_kg), 0) AS total_kg')
+            ->selectRaw('COALESCE(SUM(CASE WHEN biaya_utama IS NOT NULL THEN berat_kg ELSE 0 END), 0) AS total_kg_berharga')
             ->selectRaw('COALESCE(SUM(biaya_utama), 0) AS total_biaya_utama')
             ->selectRaw('COALESCE(SUM(item_biaya), 0) AS total_terpisah')
             ->selectRaw('COUNT(*) AS jumlah_catatan')
@@ -104,6 +105,7 @@ class KuotaService
             rentang: $rentang,
             aturan: $aturan,
             terpakaiCenti: $this->hargaService->keCentiKg((string) ($agregat?->total_kg ?? '0')),
+            terpakaiBerhargaCenti: $this->hargaService->keCentiKg((string) ($agregat?->total_kg_berharga ?? '0')),
             totalBiayaUtama: (int) ($agregat?->total_biaya_utama ?? 0),
             bayarTerpisah: (int) ($agregat?->total_terpisah ?? 0),
             jumlahCatatan: (int) ($agregat?->jumlah_catatan ?? 0),
@@ -139,6 +141,7 @@ class KuotaService
             ->groupBy('penghuni_id')
             ->select('penghuni_id')
             ->selectRaw('COALESCE(SUM(berat_kg), 0) AS total_kg')
+            ->selectRaw('COALESCE(SUM(CASE WHEN biaya_utama IS NOT NULL THEN berat_kg ELSE 0 END), 0) AS total_kg_berharga')
             ->selectRaw('COALESCE(SUM(biaya_utama), 0) AS total_biaya_utama')
             ->selectRaw('COALESCE(SUM(item_biaya), 0) AS total_terpisah')
             ->selectRaw('COUNT(*) AS jumlah_catatan')
@@ -165,6 +168,7 @@ class KuotaService
                 rentang: $rentang,
                 aturan: $aturan,
                 terpakaiCenti: $this->hargaService->keCentiKg((string) ($row?->total_kg ?? '0')),
+                terpakaiBerhargaCenti: $this->hargaService->keCentiKg((string) ($row?->total_kg_berharga ?? '0')),
                 totalBiayaUtama: (int) ($row?->total_biaya_utama ?? 0),
                 bayarTerpisah: (int) ($row?->total_terpisah ?? 0),
                 jumlahCatatan: (int) ($row?->jumlah_catatan ?? 0),
@@ -195,6 +199,7 @@ class KuotaService
             ->whereBetween('tanggal', [$awal->toDateString(), $akhir->endOfMonth()->toDateString()])
             ->selectRaw("DATE_FORMAT(tanggal, '%Y-%m') AS bulan")
             ->selectRaw('COALESCE(SUM(berat_kg), 0) AS total_kg')
+            ->selectRaw('COALESCE(SUM(CASE WHEN biaya_utama IS NOT NULL THEN berat_kg ELSE 0 END), 0) AS total_kg_berharga')
             ->selectRaw('COALESCE(SUM(biaya_utama), 0) AS total_biaya_utama')
             ->selectRaw('COALESCE(SUM(item_biaya), 0) AS total_terpisah')
             ->selectRaw('COUNT(*) AS jumlah_catatan')
@@ -222,6 +227,7 @@ class KuotaService
                 rentang: $rentang,
                 aturan: $aturan,
                 terpakaiCenti: $this->hargaService->keCentiKg((string) ($row?->total_kg ?? '0')),
+                terpakaiBerhargaCenti: $this->hargaService->keCentiKg((string) ($row?->total_kg_berharga ?? '0')),
                 totalBiayaUtama: (int) ($row?->total_biaya_utama ?? 0),
                 bayarTerpisah: (int) ($row?->total_terpisah ?? 0),
                 jumlahCatatan: (int) ($row?->jumlah_catatan ?? 0),
@@ -332,6 +338,7 @@ class KuotaService
         array $rentang,
         array $aturan,
         int $terpakaiCenti,
+        int $terpakaiBerhargaCenti,
         int $totalBiayaUtama,
         int $bayarTerpisah,
         int $jumlahCatatan,
@@ -376,6 +383,8 @@ class KuotaService
 
         $sisaCenti = max(0, $kuotaCenti - $terpakaiCenti);
         $kelebihanCenti = max(0, $terpakaiCenti - $kuotaCenti);
+        // Tagihan lewat kuota otomatis hanya menghitung catatan yang biayanya sudah diinput (biaya_utama IS NOT NULL)
+        $kelebihanTagihCenti = max(0, $terpakaiBerhargaCenti - $kuotaCenti);
         $persen = $kuotaCenti > 0
             ? intdiv(($terpakaiCenti * 100) + intdiv($kuotaCenti, 2), $kuotaCenti)
             : 0;
@@ -389,10 +398,10 @@ class KuotaService
             default => 'normal',
         };
 
-        $diBawahToleransi = $kelebihanCenti > 0 && $kelebihanCenti < $aturan['toleransi_centi'];
+        $diBawahToleransi = $kelebihanTagihCenti > 0 && $kelebihanTagihCenti < $aturan['toleransi_centi'];
 
         $tagihanOtomatis = $this->hargaService->hitungTagihanLewatKuota(
-            kelebihanCenti: $kelebihanCenti,
+            kelebihanCenti: $kelebihanTagihCenti,
             tarifPerKg: $aturan['tarif_per_kg'],
             toleransiCenti: $aturan['toleransi_centi'],
             pembulatan: $aturan['pembulatan'],

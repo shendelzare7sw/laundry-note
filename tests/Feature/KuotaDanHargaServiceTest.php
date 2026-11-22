@@ -218,6 +218,60 @@ class KuotaDanHargaServiceTest extends TestCase
         $this->assertLessThanOrEqual(4, $jumlahQuery);
     }
 
+    public function test_catatan_tanpa_biaya_tidak_asal_dihitung_pada_tagihan_otomatis_dan_reset(): void
+    {
+        $kuotaService = app(KuotaService::class);
+        $penghuni = Penghuni::query()->create([
+            'properti_id' => $this->properti->id,
+            'nama' => 'Glenn Kasus Belum Diisi',
+            'status' => 'aktif',
+            'tanggal_masuk' => '2026-01-01',
+        ]);
+
+        // 21,0 kg sudah punya biaya_utama -> kelebihan berharga 1,0 kg = Rp8.000
+        Laundry::query()->create([
+            'properti_id' => $this->properti->id,
+            'tanggal' => '2026-11-17',
+            'jenis' => 'penghuni',
+            'penghuni_id' => $penghuni->id,
+            'kamar_id' => $this->kamar->id,
+            'berat_kg' => '21.00',
+            'biaya_utama' => 164800,
+            'item_biaya' => 0,
+            'dicatat_oleh' => $this->admin->id,
+        ]);
+
+        // 2,7 kg biaya_utama NULL (Belum diisi) -> tidak boleh asal dihitung jadi Rp30.000
+        $belumDiisi = Laundry::query()->create([
+            'properti_id' => $this->properti->id,
+            'tanggal' => '2026-11-20',
+            'jenis' => 'penghuni',
+            'penghuni_id' => $penghuni->id,
+            'kamar_id' => $this->kamar->id,
+            'berat_kg' => '2.70',
+            'biaya_utama' => null,
+            'item_biaya' => 0,
+            'dicatat_oleh' => $this->admin->id,
+        ]);
+
+        $awal = $kuotaService->statusBulan($penghuni, '2026-11');
+        $this->assertSame(2370, $awal['terpakai_centi']);
+        $this->assertSame(8000, $awal['tagihan_otomatis']);
+        $this->assertSame(8000, $awal['tagihan_lewat_kuota']);
+
+        // Ubah manual lalu reset otomatis harus kembali ke Rp8.000 (bukan Rp30.000)
+        $kuotaService->simpanPenyesuaian($penghuni, '2026-11', 12000, 'Manual sementara', $this->admin);
+        $kuotaService->simpanPenyesuaian($penghuni, '2026-11', null, null, $this->admin, true);
+        $setelahReset = $kuotaService->statusBulan($penghuni, '2026-11');
+        $this->assertSame(8000, $setelahReset['tagihan_lewat_kuota']);
+
+        // Setelah biaya 2,7 kg diinput, barulah ikut terhitung (kelebihan 3,7 kg = 29.600 -> Rp30.000)
+        $belumDiisi->forceFill(['biaya_utama' => 22000])->save();
+        $setelahDiisi = $kuotaService->statusBulan($penghuni, '2026-11');
+        $this->assertSame(30000, $setelahDiisi['tagihan_otomatis']);
+        $this->assertSame(30000, $setelahDiisi['tagihan_lewat_kuota']);
+    }
+
     /**
      * @param  array<int, array{tanggal: string, berat_kg: string, item_biaya: int}>  $catatan
      */
