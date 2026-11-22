@@ -133,6 +133,72 @@ class NotifikasiService
         return $items->values();
     }
 
+    public const AKSI_TERPANTAU = [
+        'laundry_tambah',
+        'laundry_ubah',
+        'laundry_hapus',
+        'laundry_pulihkan',
+        'laundry_tetapkan_pemilik',
+        'laundry_lengkapi_harga',
+        'penghuni_masuk',
+        'penghuni_pindah_kamar',
+        'penghuni_batalkan_pindah',
+        'penghuni_keluar',
+        'penghuni_batalkan_keluar',
+        'penghuni_ganti_nomor',
+        'penghuni_ubah_data',
+        'kuota_simpan_penyesuaian',
+        'kuota_hapus_penyesuaian',
+        'pengaturan_aturan_ubah',
+        'pengaturan_izin_penjaga_ubah',
+        'pengaturan_template_wa_ubah',
+    ];
+
+    /**
+     * Format satu record AuditLog menjadi payload notifikasi (digunakan oleh FCM Push Service).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function formatSatuAudit(AuditLog $log): ?array
+    {
+        if (! in_array($log->aksi, self::AKSI_TERPANTAU, true) || $log->properti_id === null) {
+            return null;
+        }
+
+        $properti = Properti::query()->find($log->properti_id);
+        if (! $properti instanceof Properti) {
+            return null;
+        }
+
+        $log->loadMissing('pengguna:id,name,role');
+        $snap = is_array($log->sesudah) && $log->sesudah !== []
+            ? $log->sesudah
+            : (is_array($log->sebelum) ? $log->sebelum : []);
+
+        $penghuniIds = [];
+        $kamarIds = [];
+        if (! empty($snap['penghuni_id'])) {
+            $penghuniIds[] = (int) $snap['penghuni_id'];
+        }
+        if (! empty($snap['kamar_id'])) {
+            $kamarIds[] = (int) $snap['kamar_id'];
+        }
+        if ($log->subjek_type === Penghuni::class && $log->subjek_id) {
+            $penghuniIds[] = (int) $log->subjek_id;
+        }
+
+        $penghuniMap = $penghuniIds !== []
+            ? Penghuni::withTrashed()->whereIn('id', array_unique($penghuniIds))->pluck('nama', 'id')
+            : collect();
+        $kamarMap = $kamarIds !== []
+            ? Kamar::query()->whereIn('id', array_unique($kamarIds))->pluck('nomor', 'id')
+            : collect();
+
+        $hariIni = CarbonImmutable::now('Asia/Jakarta')->toDateString();
+
+        return $this->susunItemAudit($log, $properti, $penghuniMap, $kamarMap, $hariIni);
+    }
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -144,26 +210,7 @@ class NotifikasiService
             ->withoutGlobalScopes()
             ->where('properti_id', $properti->id)
             ->where('created_at', '>=', $sejak)
-            ->whereIn('aksi', [
-                'laundry_tambah',
-                'laundry_ubah',
-                'laundry_hapus',
-                'laundry_pulihkan',
-                'laundry_tetapkan_pemilik',
-                'laundry_lengkapi_harga',
-                'penghuni_masuk',
-                'penghuni_pindah_kamar',
-                'penghuni_batalkan_pindah',
-                'penghuni_keluar',
-                'penghuni_batalkan_keluar',
-                'penghuni_ganti_nomor',
-                'penghuni_ubah_data',
-                'kuota_simpan_penyesuaian',
-                'kuota_hapus_penyesuaian',
-                'pengaturan_aturan_ubah',
-                'pengaturan_izin_penjaga_ubah',
-                'pengaturan_template_wa_ubah',
-            ])
+            ->whereIn('aksi', self::AKSI_TERPANTAU)
             ->with('pengguna:id,name,role')
             ->orderByDesc('id')
             ->limit(25)
@@ -200,101 +247,116 @@ class NotifikasiService
         $hasil = [];
 
         foreach ($logs as $log) {
-            $aktorNama = $log->pengguna?->name ?? 'Staf';
-            $snap = is_array($log->sesudah) && $log->sesudah !== []
-                ? $log->sesudah
-                : (is_array($log->sebelum) ? $log->sebelum : []);
-
-            $waktu = $log->created_at
-                ? CarbonImmutable::parse($log->created_at)->setTimezone('Asia/Jakarta')
-                : CarbonImmutable::now('Asia/Jakarta');
-            $waktuLabel = $waktu->toDateString() === $hariIni
-                ? 'Hari ini · '.$waktu->format('H:i')
-                : $waktu->translatedFormat('d M, H:i');
-
-            $penghuniId = null;
-            $laundryId = null;
-            $url = route('laundry.index');
-            $tipe = 'activity';
-            $judul = "Perubahan data ({$aktorNama})";
-            $keterangan = '';
-
-            if (str_starts_with($log->aksi, 'laundry_')) {
-                $laundryId = $log->subjek_id ? (int) $log->subjek_id : null;
-                $penghuniId = ! empty($snap['penghuni_id']) ? (int) $snap['penghuni_id'] : null;
-
-                $judul = match ($log->aksi) {
-                    'laundry_tambah' => "Laundry baru dicatat ({$aktorNama})",
-                    'laundry_ubah' => "Catatan laundry diubah ({$aktorNama})",
-                    'laundry_hapus' => "Catatan laundry dihapus ({$aktorNama})",
-                    'laundry_pulihkan' => "Catatan laundry dipulihkan ({$aktorNama})",
-                    'laundry_tetapkan_pemilik' => "Pemilik cucian ditetapkan ({$aktorNama})",
-                    'laundry_lengkapi_harga' => "Harga laundry dilengkapi ({$aktorNama})",
-                    default => "Aktivitas laundry ({$aktorNama})",
-                };
-                $tipe = $log->aksi === 'laundry_hapus' ? 'warn' : 'activity';
-                $keterangan = $this->ringkasLaundry($log->aksi, $snap, $penghuniMap, $kamarMap);
-                $url = $log->aksi === 'laundry_hapus'
-                    ? route('laundry.terhapus')
-                    : route('laundry.index');
-            } elseif (str_starts_with($log->aksi, 'penghuni_')) {
-                $penghuniId = $log->subjek_id ? (int) $log->subjek_id : null;
-                $namaPenghuni = (string) ($snap['nama'] ?? ($penghuniId ? $penghuniMap->get($penghuniId) : null) ?? 'Penghuni');
-                $kamarNomor = $snap['kamar'] ?? ($snap['kamar_tujuan'] ?? null);
-
-                $judul = match ($log->aksi) {
-                    'penghuni_masuk' => "Penghuni baru masuk ({$aktorNama})",
-                    'penghuni_pindah_kamar' => "Penghuni pindah kamar ({$aktorNama})",
-                    'penghuni_batalkan_pindah' => "Pindah kamar dibatalkan ({$aktorNama})",
-                    'penghuni_keluar' => "Penghuni keluar ({$aktorNama})",
-                    'penghuni_batalkan_keluar' => "Checkout dibatalkan ({$aktorNama})",
-                    'penghuni_ganti_nomor' => "Nomor WA penghuni diubah ({$aktorNama})",
-                    default => "Data penghuni diubah ({$aktorNama})",
-                };
-                $tipe = in_array($log->aksi, ['penghuni_keluar', 'penghuni_batalkan_pindah'], true) ? 'warn' : 'activity';
-                $keterangan = $kamarNomor
-                    ? "{$namaPenghuni} · Kamar {$kamarNomor}"
-                    : $namaPenghuni;
-                $url = $penghuniId ? route('penghuni.show', $penghuniId) : route('penghuni.index');
-            } elseif (str_starts_with($log->aksi, 'kuota_')) {
-                $penghuniId = $log->subjek_id ? (int) $log->subjek_id : null;
-                $namaPenghuni = (string) (($penghuniId ? $penghuniMap->get($penghuniId) : null) ?? 'Penghuni');
-
-                $judul = $log->aksi === 'kuota_simpan_penyesuaian'
-                    ? "Tagihan kuota disesuaikan ({$aktorNama})"
-                    : "Tagihan kuota direset otomatis ({$aktorNama})";
-                $tipe = $log->aksi === 'kuota_simpan_penyesuaian' ? 'activity' : 'info';
-                $nominal = isset($snap['nominal']) ? ' · Rp'.number_format((int) $snap['nominal'], 0, ',', '.') : '';
-                $bulan = isset($snap['bulan']) ? " ({$snap['bulan']})" : '';
-                $keterangan = "{$namaPenghuni}{$bulan}{$nominal}";
-                $url = $penghuniId ? route('penghuni.show', $penghuniId) : route('laporan.index');
-            } else {
-                $tipe = 'info';
-                $judul = match ($log->aksi) {
-                    'pengaturan_aturan_ubah' => "Aturan tarif & kuota diubah ({$aktorNama})",
-                    'pengaturan_izin_penjaga_ubah' => "Izin penjaga diubah ({$aktorNama})",
-                    'pengaturan_template_wa_ubah' => "Template WhatsApp diubah ({$aktorNama})",
-                    default => "Pengaturan diubah ({$aktorNama})",
-                };
-                $keterangan = $properti->nama;
-                $url = route('pengaturan.index');
-            }
-
-            $hasil[] = [
-                'id' => "audit_{$log->id}",
-                'tipe' => $tipe,
-                'judul' => $judul,
-                'keterangan' => $keterangan,
-                'waktu_label' => $waktuLabel,
-                'timestamp_ms' => $waktu->getTimestampMs(),
-                'aktor_id' => $log->user_id ? (int) $log->user_id : null,
-                'penghuni_id' => $penghuniId,
-                'laundry_id' => $laundryId,
-                'url' => $url,
-            ];
+            $hasil[] = $this->susunItemAudit($log, $properti, $penghuniMap, $kamarMap, $hariIni);
         }
 
         return $hasil;
+    }
+
+    /**
+     * @param  Collection<int, string>  $penghuniMap
+     * @param  Collection<int, string>  $kamarMap
+     * @return array<string, mixed>
+     */
+    private function susunItemAudit(
+        AuditLog $log,
+        Properti $properti,
+        Collection $penghuniMap,
+        Collection $kamarMap,
+        string $hariIni,
+    ): array {
+        $aktorNama = $log->pengguna?->name ?? 'Staf';
+        $snap = is_array($log->sesudah) && $log->sesudah !== []
+            ? $log->sesudah
+            : (is_array($log->sebelum) ? $log->sebelum : []);
+
+        $waktu = $log->created_at
+            ? CarbonImmutable::parse($log->created_at)->setTimezone('Asia/Jakarta')
+            : CarbonImmutable::now('Asia/Jakarta');
+        $waktuLabel = $waktu->toDateString() === $hariIni
+            ? 'Hari ini · '.$waktu->format('H:i')
+            : $waktu->translatedFormat('d M, H:i');
+
+        $penghuniId = null;
+        $laundryId = null;
+        $url = route('laundry.index');
+        $tipe = 'activity';
+        $judul = "Perubahan data ({$aktorNama})";
+        $keterangan = '';
+
+        if (str_starts_with($log->aksi, 'laundry_')) {
+            $laundryId = $log->subjek_id ? (int) $log->subjek_id : null;
+            $penghuniId = ! empty($snap['penghuni_id']) ? (int) $snap['penghuni_id'] : null;
+
+            $judul = match ($log->aksi) {
+                'laundry_tambah' => "Laundry baru dicatat ({$aktorNama})",
+                'laundry_ubah' => "Catatan laundry diubah ({$aktorNama})",
+                'laundry_hapus' => "Catatan laundry dihapus ({$aktorNama})",
+                'laundry_pulihkan' => "Catatan laundry dipulihkan ({$aktorNama})",
+                'laundry_tetapkan_pemilik' => "Pemilik cucian ditetapkan ({$aktorNama})",
+                'laundry_lengkapi_harga' => "Harga laundry dilengkapi ({$aktorNama})",
+                default => "Aktivitas laundry ({$aktorNama})",
+            };
+            $tipe = $log->aksi === 'laundry_hapus' ? 'warn' : 'activity';
+            $keterangan = $this->ringkasLaundry($log->aksi, $snap, $penghuniMap, $kamarMap);
+            $url = $log->aksi === 'laundry_hapus'
+                ? route('laundry.terhapus')
+                : route('laundry.index');
+        } elseif (str_starts_with($log->aksi, 'penghuni_')) {
+            $penghuniId = $log->subjek_id ? (int) $log->subjek_id : null;
+            $namaPenghuni = (string) ($snap['nama'] ?? ($penghuniId ? $penghuniMap->get($penghuniId) : null) ?? 'Penghuni');
+            $kamarNomor = $snap['kamar'] ?? ($snap['kamar_tujuan'] ?? null);
+
+            $judul = match ($log->aksi) {
+                'penghuni_masuk' => "Penghuni baru masuk ({$aktorNama})",
+                'penghuni_pindah_kamar' => "Penghuni pindah kamar ({$aktorNama})",
+                'penghuni_batalkan_pindah' => "Pindah kamar dibatalkan ({$aktorNama})",
+                'penghuni_keluar' => "Penghuni keluar ({$aktorNama})",
+                'penghuni_batalkan_keluar' => "Checkout dibatalkan ({$aktorNama})",
+                'penghuni_ganti_nomor' => "Nomor WA penghuni diubah ({$aktorNama})",
+                default => "Data penghuni diubah ({$aktorNama})",
+            };
+            $tipe = in_array($log->aksi, ['penghuni_keluar', 'penghuni_batalkan_pindah'], true) ? 'warn' : 'activity';
+            $keterangan = $kamarNomor
+                ? "{$namaPenghuni} · Kamar {$kamarNomor}"
+                : $namaPenghuni;
+            $url = $penghuniId ? route('penghuni.show', $penghuniId) : route('penghuni.index');
+        } elseif (str_starts_with($log->aksi, 'kuota_')) {
+            $penghuniId = $log->subjek_id ? (int) $log->subjek_id : null;
+            $namaPenghuni = (string) (($penghuniId ? $penghuniMap->get($penghuniId) : null) ?? 'Penghuni');
+
+            $judul = $log->aksi === 'kuota_simpan_penyesuaian'
+                ? "Tagihan kuota disesuaikan ({$aktorNama})"
+                : "Tagihan kuota direset otomatis ({$aktorNama})";
+            $tipe = $log->aksi === 'kuota_simpan_penyesuaian' ? 'activity' : 'info';
+            $nominal = isset($snap['nominal']) ? ' · Rp'.number_format((int) $snap['nominal'], 0, ',', '.') : '';
+            $bulan = isset($snap['bulan']) ? " ({$snap['bulan']})" : '';
+            $keterangan = "{$namaPenghuni}{$bulan}{$nominal}";
+            $url = $penghuniId ? route('penghuni.show', $penghuniId) : route('laporan.index');
+        } else {
+            $tipe = 'info';
+            $judul = match ($log->aksi) {
+                'pengaturan_aturan_ubah' => "Aturan tarif & kuota diubah ({$aktorNama})",
+                'pengaturan_izin_penjaga_ubah' => "Izin penjaga diubah ({$aktorNama})",
+                'pengaturan_template_wa_ubah' => "Template WhatsApp diubah ({$aktorNama})",
+                default => "Pengaturan diubah ({$aktorNama})",
+            };
+            $keterangan = $properti->nama;
+            $url = route('pengaturan.index');
+        }
+
+        return [
+            'id' => "audit_{$log->id}",
+            'tipe' => $tipe,
+            'judul' => $judul,
+            'keterangan' => $keterangan,
+            'waktu_label' => $waktuLabel,
+            'timestamp_ms' => $waktu->getTimestampMs(),
+            'aktor_id' => $log->user_id ? (int) $log->user_id : null,
+            'penghuni_id' => $penghuniId,
+            'laundry_id' => $laundryId,
+            'url' => $url,
+        ];
     }
 
     /**

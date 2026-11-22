@@ -5,11 +5,12 @@ namespace App\Services;
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class AuditService
 {
     /**
-     * Catat perubahan penting ke tabel audit_log.
+     * Catat perubahan penting ke tabel audit_log dan picu FCM push real-time setelah commit.
      *
      * @param  array<string, mixed>|null  $sebelum
      * @param  array<string, mixed>|null  $sesudah
@@ -27,7 +28,7 @@ class AuditService
         $subjekType = $subjek instanceof Model ? $subjek::class : $subjek;
         $resolvedId = $subjek instanceof Model ? $subjek->getKey() : $subjekId;
 
-        return AuditLog::query()->create([
+        $log = AuditLog::query()->create([
             'properti_id' => $propertiId,
             'user_id' => $aktor?->id,
             'aksi' => $aksi,
@@ -38,5 +39,16 @@ class AuditService
             'ip' => $ip ?? request()?->ip(),
             'created_at' => now('Asia/Jakarta'),
         ]);
+
+        if ($propertiId !== null && ! app()->runningUnitTests()) {
+            $originToken = request()?->header('X-Device-Token');
+            $originTokenStr = is_string($originToken) && trim($originToken) !== '' ? trim($originToken) : null;
+
+            DB::afterCommit(function () use ($log, $originTokenStr): void {
+                app(FcmPushService::class)->kirimUntukAudit($log, $originTokenStr);
+            });
+        }
+
+        return $log;
     }
 }

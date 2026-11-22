@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthApiController;
 use App\Http\Controllers\Api\V1\BerandaApiController;
+use App\Http\Controllers\Api\V1\DeviceTokenApiController;
 use App\Http\Controllers\Api\V1\LaporanApiController;
 use App\Http\Controllers\Api\V1\LaundryApiController;
 use App\Http\Controllers\Api\V1\NotifikasiApiController;
@@ -19,6 +20,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::middleware(['auth:sanctum', 'akun.aktif.api'])->group(function (): void {
         Route::post('/auth/logout', [AuthApiController::class, 'logout'])->name('auth.logout');
         Route::get('/me', [AuthApiController::class, 'me'])->name('me');
+        Route::post('/device-token', [DeviceTokenApiController::class, 'store'])->name('device-token.store');
+        Route::delete('/device-token', [DeviceTokenApiController::class, 'destroy'])->name('device-token.destroy');
         Route::get('/properti', [PropertiApiController::class, 'index'])->name('properti.index');
         Route::post('/properti', [PropertiApiController::class, 'store'])->name('properti.store');
         Route::put('/properti/{properti}', [PropertiApiController::class, 'update'])->name('properti.update');

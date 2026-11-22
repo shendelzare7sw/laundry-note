@@ -81,5 +81,26 @@ class NotifikasiSinkronTest extends TestCase
 
         $apiIds = collect($apiRes->json('items'))->pluck('id')->all();
         $this->assertContains($laundryNotif['id'], $apiIds);
+
+        // 4. Registrasi & hapus FCM device token via API v1
+        $sampleToken = str_repeat('a', 32);
+        $this->postJson('/api/v1/device-token', [
+            'token' => $sampleToken,
+            'platform' => 'android',
+            'device_name' => 'Xiaomi Redmi',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('device_tokens', [
+            'user_id' => $owner->id,
+            'token' => $sampleToken,
+        ]);
+
+        $this->deleteJson('/api/v1/device-token', [
+            'token' => $sampleToken,
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('device_tokens', [
+            'token' => $sampleToken,
+        ]);
     }
 }
