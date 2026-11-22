@@ -11,6 +11,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
@@ -92,5 +93,38 @@ return Application::configure(basePath: dirname(__DIR__))
                 'code' => 'TOO_MANY_REQUESTS',
                 'request_id' => (string) $request->attributes->get('request_id', ''),
             ], 429);
+        });
+
+        $exceptions->respond(function (SymfonyResponse $response, Throwable $exception, Request $request): SymfonyResponse {
+            if ($response->getStatusCode() !== 419) {
+                return $response;
+            }
+
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Sesi halaman telah berakhir. Silakan muat ulang dan coba lagi.',
+                    'code' => 'PAGE_EXPIRED',
+                    'request_id' => (string) $request->attributes->get('request_id', ''),
+                ], 419);
+            }
+
+            if ($request->user() === null) {
+                return redirect()
+                    ->route('login')
+                    ->withErrors(['username' => 'Sesi halaman telah berakhir. Silakan masuk kembali.']);
+            }
+
+            $tujuan = url()->previous();
+
+            if ($tujuan === '' || $tujuan === $request->fullUrl()) {
+                $tujuan = route('beranda');
+            }
+
+            return redirect($tujuan)
+                ->withInput($request->except(['password', 'password_confirmation', '_token']))
+                ->with('toast', [
+                    'tipe' => 'warn',
+                    'pesan' => 'Halaman terlalu lama tidak aktif sehingga token keamanan diperbarui. Silakan kirim ulang formulir Anda.',
+                ]);
         });
     })->create();
