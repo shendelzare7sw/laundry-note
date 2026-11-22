@@ -215,11 +215,11 @@
                         {{-- Lonceng Notifikasi --}}
                         @php
                             $notifStorageKey = 'laundry_kos_notif:' . $penggunaSaatIni->id . ':' . ($propertiAktif?->id ?? 'global');
-                            $notifPayload = ($daftarNotifikasi ?? collect())->take(15)->values()->all();
+                            $notifPayload = ($daftarNotifikasi ?? collect())->take(25)->values()->all();
                         @endphp
                         <div
                             class="relative"
-                            x-data="notificationMenu(@js($notifStorageKey), @js($notifPayload))"
+                            x-data="notificationMenu(@js($notifStorageKey), @js($notifPayload), @js(route('notifikasi.index')))"
                             x-on:keydown.escape.window="close"
                         >
                             <button
@@ -308,17 +308,19 @@
                                                 <span
                                                     class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
                                                     :class="{
+                                                        'bg-maroon/10 text-maroon': notif.tipe === 'activity',
                                                         'bg-danger/10 text-danger': notif.tipe === 'danger',
                                                         'bg-gold-container text-warn': notif.tipe === 'warn',
-                                                        'bg-info/10 text-info': notif.tipe !== 'danger' && notif.tipe !== 'warn',
+                                                        'bg-info/10 text-info': notif.tipe !== 'activity' && notif.tipe !== 'danger' && notif.tipe !== 'warn',
                                                     }"
                                                 >
                                                     <i
                                                         class="fas text-xs"
                                                         :class="{
+                                                            'fa-shirt': notif.tipe === 'activity',
                                                             'fa-triangle-exclamation': notif.tipe === 'danger',
                                                             'fa-circle-exclamation': notif.tipe === 'warn',
-                                                            'fa-sliders': notif.tipe !== 'danger' && notif.tipe !== 'warn',
+                                                            'fa-sliders': notif.tipe !== 'activity' && notif.tipe !== 'danger' && notif.tipe !== 'warn',
                                                         }"
                                                         aria-hidden="true"
                                                     ></i>
@@ -337,6 +339,11 @@
                                                         ></span>
                                                     </div>
                                                     <p class="mt-0.5 text-[11px] leading-snug text-muted" x-text="notif.keterangan"></p>
+                                                    <p
+                                                        x-show="notif.waktu_label"
+                                                        x-text="notif.waktu_label"
+                                                        class="mt-0.5 text-[10px] text-subtle"
+                                                    ></p>
                                                 </div>
                                             </a>
                                         </li>

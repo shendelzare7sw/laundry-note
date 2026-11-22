@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\LaundryController;
+use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\PenghuniController;
@@ -18,6 +19,7 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
 });
 
 Route::middleware(['auth', 'properti.aktif'])->group(function (): void {

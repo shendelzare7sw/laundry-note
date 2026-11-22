@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthApiController;
 use App\Http\Controllers\Api\V1\BerandaApiController;
 use App\Http\Controllers\Api\V1\LaporanApiController;
 use App\Http\Controllers\Api\V1\LaundryApiController;
+use App\Http\Controllers\Api\V1\NotifikasiApiController;
 use App\Http\Controllers\Api\V1\PengaturanApiController;
 use App\Http\Controllers\Api\V1\PenggunaApiController;
 use App\Http\Controllers\Api\V1\PenghuniApiController;
@@ -33,6 +34,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         Route::middleware('properti.api')->group(function (): void {
             Route::get('/beranda', [BerandaApiController::class, 'index'])->name('beranda');
+            Route::get('/notifikasi', [NotifikasiApiController::class, 'index'])->name('notifikasi.index');
             Route::get('/kamar', [PropertiApiController::class, 'kamar'])->name('kamar.index');
 
             Route::get('/pengaturan', [PengaturanApiController::class, 'show'])->name('pengaturan.show');

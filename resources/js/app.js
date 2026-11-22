@@ -175,12 +175,15 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    Alpine.data('notificationMenu', (storageKey = 'laundry_kos_notif', initialItems = []) => ({
+    Alpine.data('notificationMenu', (storageKey = 'laundry_kos_notif', initialItems = [], endpoint = '') => ({
         open: false,
         storageKey,
+        endpoint,
         items: Array.isArray(initialItems) ? initialItems : [],
         readIds: [],
         dismissedIds: [],
+        pollTimer: null,
+        fetching: false,
         init() {
             try {
                 const raw = window.localStorage.getItem(this.storageKey);
@@ -192,6 +195,46 @@ document.addEventListener('alpine:init', () => {
             } catch {
                 this.readIds = [];
                 this.dismissedIds = [];
+            }
+
+            if (this.endpoint) {
+                this.refreshFromServer();
+                this.pollTimer = setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        this.refreshFromServer();
+                    }
+                }, 15000);
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        this.refreshFromServer();
+                    }
+                });
+            }
+        },
+        destroy() {
+            if (this.pollTimer) {
+                clearInterval(this.pollTimer);
+                this.pollTimer = null;
+            }
+        },
+        async refreshFromServer() {
+            if (!this.endpoint || this.fetching) return;
+            this.fetching = true;
+            try {
+                const res = await fetch(this.endpoint, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (Array.isArray(data.items)) {
+                    this.items = data.items;
+                }
+            } catch {
+                // Abaikan gangguan jaringan sementara
+            } finally {
+                this.fetching = false;
             }
         },
         persist() {
@@ -209,6 +252,9 @@ document.addEventListener('alpine:init', () => {
         },
         toggle() {
             this.open = !this.open;
+            if (this.open) {
+                this.refreshFromServer();
+            }
         },
         close() {
             this.open = false;
