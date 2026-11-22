@@ -217,13 +217,14 @@ class PenghuniControllerTest extends TestCase
             'subjek_id' => $penghuni->id,
         ]);
 
-        // Penjaga tetap TIDAK BOLEH melakukan penyesuaian kuota manual meski K6 aktif
+        // Penjaga pada properti yang sama juga berhak menyesuaikan tagihan lewat kuota
         $this->actingAs($this->penjagaA)
             ->post(route('penghuni.penyesuaian-kuota', $penghuni), [
                 'bulan' => '2026-11',
-                'nominal' => 15000,
+                'nominal' => 14000,
+                'catatan' => 'Penyesuaian penjaga',
             ])
-            ->assertForbidden();
+            ->assertRedirect(route('penghuni.show', ['penghuni' => $penghuni, 'bulan' => '2026-11']));
 
         // Admin dapat menyimpan dan mereset penyesuaian kuota manual
         $this->actingAs($this->adminA)

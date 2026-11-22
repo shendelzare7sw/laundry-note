@@ -45,10 +45,6 @@ class PenghuniPolicy
 
     public function sesuaikanKuota(User $user, Penghuni $penghuni): bool
     {
-        if (! $user->bisaAksesProperti($penghuni->properti_id)) {
-            return false;
-        }
-
-        return ! $user->isPenjaga();
+        return $user->bisaAksesProperti($penghuni->properti_id);
     }
 }
