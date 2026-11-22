@@ -105,6 +105,7 @@ class SimpanLaundryRequest extends FormRequest
             'berat_kg' => ['nullable', 'numeric', 'gt:0', 'max:99.99', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'konfirmasi_berat_besar' => ['sometimes', 'boolean'],
             'biaya_utama' => ['nullable', 'integer', 'min:0', 'max:10000000'],
+            'kosongkan_biaya_utama' => ['sometimes', 'boolean'],
             'catatan' => ['nullable', 'string', 'max:500'],
             'ref' => ['nullable', 'string', 'max:100'],
             'item' => ['nullable', 'array', 'max:'.LaundryItem::MAKS_PER_CATATAN],

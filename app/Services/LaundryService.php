@@ -425,8 +425,13 @@ class LaundryService
             $beratKg = $this->hargaService->dariCentiKg($beratCenti);
             $otomatis = $this->biayaOtomatis($properti->id, $tanggal, $beratKg);
             $input = $data['biaya_utama'] ?? null;
+            $kosongkanSengaja = ! empty($data['kosongkan_biaya_utama'])
+                || ($kecualiId !== null && array_key_exists('biaya_utama', $data) && ($input === null || $input === ''));
 
-            if ($input === null || $input === '') {
+            if ($kosongkanSengaja) {
+                $biayaUtama = null;
+                $biayaManual = false;
+            } elseif ($input === null || $input === '') {
                 $biayaUtama = $otomatis;
             } else {
                 $biayaUtama = (int) $input;

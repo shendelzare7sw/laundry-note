@@ -6,7 +6,7 @@
     $biayaUtamaAwal = old('biaya_utama', $laundry?->biaya_utama !== null ? (string) $laundry->biaya_utama : '');
     $biayaManualAwal = old('_token') !== null
         ? ($biayaUtamaAwal !== null && trim((string) $biayaUtamaAwal) !== '')
-        : (bool) ($laundry?->biaya_manual ?? false);
+        : ((bool) ($laundry?->biaya_manual ?? false) || ($laundry !== null && $laundry->berat_kg !== null && $laundry->biaya_utama === null));
 
     $itemAwal = old('item');
     if (! is_array($itemAwal)) {
@@ -326,6 +326,11 @@
                                     Kembalikan ke otomatis
                                 </button>
                             </div>
+                            <input
+                                type="hidden"
+                                name="kosongkan_biaya_utama"
+                                :value="(biayaManual && String(biayaUtama || '').replace(/\D/g, '') === '') ? '1' : '0'"
+                            >
                             <input
                                 id="laundry-biaya-utama"
                                 name="biaya_utama"

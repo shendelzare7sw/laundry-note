@@ -599,7 +599,7 @@ document.addEventListener('alpine:init', () => {
                 }
                 return;
             }
-            if (!this.biayaManual || parseRibuanInput(this.biayaUtama) === '') {
+            if (!this.biayaManual) {
                 this.biayaUtama = this.biayaOtomatis !== null ? formatRibuanInput(this.biayaOtomatis) : '';
             }
         },
@@ -622,7 +622,8 @@ document.addEventListener('alpine:init', () => {
             const digits = parseRibuanInput(this.biayaUtama);
             this.biayaUtama = formatRibuanInput(digits);
             if (digits === '') {
-                this.biayaManual = false;
+                // Mengosongkan biaya (tambah maupun edit) dipertahankan agar bisa disimpan tanpa biaya
+                this.biayaManual = this.keCentiKg(this.beratKg) > 0 || this.kecualiId !== null;
                 return;
             }
             this.biayaManual = this.biayaOtomatis === null || Number(digits) !== Number(this.biayaOtomatis);
